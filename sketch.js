@@ -70,6 +70,7 @@ function draw() {
 function touchStarted() {
   locked = true;
   target = balls.find((ball) => ball.collid(mouseX, mouseY));
+  return false;
 }
 
 function touchEnded() {
