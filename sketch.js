@@ -1,19 +1,24 @@
-const width = 60;
+const SIZE = 100;
+const WIDTH = 10;
+const HEIGHT = 15;
 let locked = false;
 const tiles = [];
 let balls = [];
 let target = null;
+
+function collid(x, y, ox, oy, size) {
+  return ox < x && x < ox + size && oy < y && y < oy + size;
+}
 
 class Tile {
   constructor(p) {
     this.p = p;
   }
   draw() {
-    rect(this.p.x, this.p.y, width, width);
+    square(this.p.x, this.p.y, SIZE);
   }
   collid(x, y) {
-    return this.p.x < x && x < this.p.x + width &&
-      this.p.y < y && y < this.p.y + width;
+    return collid(x, y, this.p.x, this.p.y, SIZE);
   }
 }
 
@@ -27,25 +32,22 @@ class Ball {
   }
   draw() {
     fill('#65ace4')
-    ellipse(this.p.x, this.p.y, width - 10);
+    ellipse(this.p.x, this.p.y, SIZE - 10);
   }
   collid(x, y) {
-    return this.p.x - width / 2 < x &&
-      x < this.p.x + width / 2 &&
-      this.p.y - width / 2 < y  &&
-      y < this.p.y + width / 2;
+    return collid(x, y, this.p.x - SIZE / 2, this.p.y - SIZE / 2, SIZE);
   }
 }
 
 function setup() {
-  createCanvas(480, 360);
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < 12; x++) {
-      tiles.push(new Tile(createVector(x * width, y * width)));
+  createCanvas(WIDTH * SIZE, HEIGHT * SIZE);
+  for (let y = 0; y < HEIGHT; y++) {
+    for (let x = 0; x < WIDTH; x++) {
+      tiles.push(new Tile(createVector(x * SIZE, y * SIZE)));
     }
   }
   for (let i = 0; i < 4; i++) {
-    balls.push(new Ball(createVector(i * width + width / 2, width / 2)));
+    balls.push(new Ball(createVector(i * SIZE + SIZE / 2, SIZE / 2)));
   }
 }
 
@@ -58,7 +60,7 @@ function draw() {
   }
   if (locked && target) {
     fill(128, 128, 128, 0)
-    ellipse(mouseX, mouseY, width - 10)
+    ellipse(mouseX, mouseY, SIZE - 10)
     line(target.p.x, target.p.y, mouseX, mouseY)
   }
   for (const ball of balls) {
@@ -76,6 +78,6 @@ function touchStarted() {
 function touchEnded() {
   locked = false;
   if (target) {
-    target.q = createVector(int(mouseX / width) * width + width / 2, int(mouseY / width) * width + width / 2);
+    target.q = createVector(int(mouseX / SIZE) * SIZE + SIZE / 2, int(mouseY / SIZE) * SIZE + SIZE / 2);
   }
 }
