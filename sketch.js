@@ -3,19 +3,31 @@ const MARGIN = SIZE / 10;
 const RADIUS = SIZE / 2;
 const WIDTH = 11;
 const HEIGHT = 15;
-const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハッ', 'パイ'];
+const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハク', 'へび'];
 
 let locked = false;
 let tiles = [];
 let balls = [];
 let target = null;
 let spell = null;
+let pcs = [];
 let monsters = [];
-let nodes = [];
 let showDialog = false;
 let buttons = [];
 
-function collid(x, y, ox, oy, size) {
+function *nodes() {
+  for (const monster of monsters) {
+    yield monster;
+  }
+  for (const pc of pcs) {
+    yield pc;
+  }
+  yield spell;
+}
+
+function collid(ox, oy, size) {
+  const x = mouseX;
+  const y = mouseY;
   return ox < x && x < ox + size && oy < y && y < oy + size;
 }
 
@@ -31,8 +43,8 @@ class Tile {
     strokeWeight(1);
     square(this.p.x, this.p.y, SIZE);
   }
-  collid(x, y) {
-    return collid(x, y, this.p.x, this.p.y, SIZE);
+  collid() {
+    return collid(this.p.x, this.p.y, SIZE);
   }
 }
 
@@ -65,11 +77,11 @@ class Node {
     fill('white');
     stroke('black');
     strokeWeight(6);
-    textAlign(CENTER);
-    text(this.label, this.p.x - RADIUS, this.p.y + 14, SIZE);
+    textAlign(CENTER, CENTER);
+    text(this.label, this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
   }
-  collid(x, y) {
-    return collid(x, y, this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
+  collid() {
+    return collid(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
 }
 
@@ -84,26 +96,8 @@ class Pc extends Node {
       this.p = this.q.copy();
     }
   }
-  drawFrame() {
-    fill('#65ace4')
-    strokeWeight(3);
-    ellipse(this.p.x, this.p.y, SIZE - MARGIN);
-  }
-  drawName() {
-    textSize(32);
-    fill(255);
-    textStyle(BOLD);
-    stroke(0);
-    strokeWeight(6);
-    textAlign(CENTER);
-    text(NAMES[this.id], this.p.x - RADIUS, this.p.y + 14, SIZE);
-  }
-  draw() {
-    this.drawFrame();
-    this.drawName();
-  }
-  collid(x, y) {
-    return collid(x, y, this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
+  collid() {
+    return collid(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
 }
 
@@ -118,6 +112,12 @@ class Spell extends Node{
 }
 
 class Monster extends Node{
+  static setup(n) {
+    monsters = [];
+    for (let i = 0; i < n; i++) {
+      monsters.push(new Monster(i + 1));
+    }
+  }
   constructor(id) {
     const x = Math.floor(Math.random() * 11);
     const y = Math.floor(Math.random() * 3 + 12);
@@ -134,7 +134,6 @@ class Monster extends Node{
     const y = this.p.y + SIZE / 3
     const w = SIZE - 10
     const h = 10;
-    const damage = random();
     strokeWeight(0);
     fill('red');
     rect(x, y, w, h);
@@ -156,7 +155,7 @@ class Button extends Node {
   }
   constructor(id, x, y) {
     const p = createVector(x, y);
-    super(p, id, `${id + 1}`, '#56a764');
+    super(p, id, `${id}`, '#56a764');
   }
 }
 
@@ -168,13 +167,10 @@ function setup() {
     }
   }
   for (let i = 0; i < NAMES.length; i++) {
-    nodes.push(new Pc(i));
+    pcs.push(new Pc(i));
   }
-  for (let i = 0; i < 6; i++) {
-    nodes.push(new Monster(i+1));
-  }
+  Monster.setup(6);
   spell = new Spell(createVector(RADIUS, RADIUS))
-  nodes.push(spell);
   Button.create();
 }
 
@@ -206,7 +202,7 @@ function draw() {
     ellipse(mouseX, mouseY, SIZE - 10);
     drawMeasure();
   }
-  for (const node of nodes) {
+  for (const node of nodes()) {
     node.move();
     node.draw();
   }
@@ -225,8 +221,17 @@ function draw() {
 }
 
 function touchStarted() {
-  locked = true;
-  target = nodes.find((node) => node.collid(mouseX, mouseY));
+  if (showDialog) {
+    const button = buttons.find((b) => b.collid(mouseX, mouseY));
+    if (button) {
+      Monster.setup(button.id);
+    }
+  } else {
+    locked = true;
+    target = pcs.find((pc) => pc.collid(mouseX, mouseY));
+    target = target || monsters.find((monster) => monster.collid(mouseX, mouseY));
+    target = target || (spell.collid(mouseX, mouseY) ? spell : null);
+  }
   return false;
 }
 
