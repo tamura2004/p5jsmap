@@ -167,25 +167,24 @@ class MonsterDamageDialog {
     this.buttons = [];
     for (let i = 0; i < 10; i++) {
       const n = nums[i];
-      const x = (i % 3) * SIZE + SIZE * 2.5;
-      const y = Math.floor(i / 3) * SIZE + SIZE * 3.5;
+      const x = (i % 3) * SIZE * 1.2 + SIZE * 2.5;
+      const y = Math.floor(i / 3) * SIZE * 1.2 + SIZE * 3.5;
       this.buttons.push(new Button(n, x, y));
     }
   }
   draw() {
     fill('white');
     strokeWeight(3);
-    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
+    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 8);
     fill('black');
     strokeWeight(0);
     textAlign(LEFT);
-    text('ダメージ', SIZE * 2, SIZE * 2);
+    text('モンスターへのダメージ', SIZE * 2, SIZE * 2);
     for (const button of this.buttons) {
       button.draw();
     }
   }
   touchStarted() {
-
   }
 }
 class MonsterNumberDialog {
@@ -295,7 +294,7 @@ function touchEnded() {
     if (moved) {
       target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
     } else {
-      dialog = monsterDamageDialog;
+      dialog = dialog ? null : monsterDamageDialog;
     }
   } else {
     dialog = dialog ? null : monsterNumberDialog;
