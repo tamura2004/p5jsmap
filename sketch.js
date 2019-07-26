@@ -6,14 +6,16 @@ const HEIGHT = 15;
 const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハク', 'へび'];
 
 let locked = false;
+let moved = false;
 let tiles = [];
 let balls = [];
 let target = null;
 let spell = null;
 let pcs = [];
 let monsters = [];
-let showDialog = false;
 let buttons = [];
+let monsterNumberDialog = null;
+let dialog = null;
 
 function *nodes() {
   for (const monster of monsters) {
@@ -60,7 +62,7 @@ class Node {
     this.p.add(this.q.copy().sub(this.p).div(4));
     if (this.p.dist(this.q) < SIZE / 4) {
       this.p = this.q.copy();
-    }    
+    }
   }
   draw() {
     this.drawFrame();
@@ -143,19 +145,41 @@ class Monster extends Node{
 }
 
 class Button extends Node {
-  static create() {
+  constructor(id, x, y) {
+    const p = createVector(x, y);
+    super(p, id, `${id}`, '#56a764');
+  }
+}
+
+class Dialog {
+  constructor() {
+    this.buttons = [];
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 5; j++) {
         const n = j + i * 5 + 1;
         const x = j * SIZE * 1.5 + SIZE * 2.5;
         const y = i * SIZE * 1.5 + SIZE * 3.5;
-        buttons.push(new Button(n, x, y)); 
+        this.buttons.push(new Button(n, x, y));
       }
     }
   }
-  constructor(id, x, y) {
-    const p = createVector(x, y);
-    super(p, id, `${id}`, '#56a764');
+  draw() {
+    fill('white');
+    strokeWeight(3);
+    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
+    fill('black');
+    strokeWeight(0);
+    textAlign(LEFT);
+    text('モンスターの数を設定', SIZE * 2, SIZE * 2);
+    for (const button of this.buttons) {
+      button.draw();
+    }
+  }
+  touchStarted() {
+    const button = this.buttons.find((b) => b.collid());
+    if (button) {
+      Monster.setup(button.id);
+    }
   }
 }
 
@@ -171,7 +195,8 @@ function setup() {
   }
   Monster.setup(6);
   spell = new Spell(createVector(RADIUS, RADIUS))
-  Button.create();
+  // Button.create();
+  monsterNumberDialog = new Dialog();
 }
 
 function drawMeasure() {
@@ -206,40 +231,38 @@ function draw() {
     node.move();
     node.draw();
   }
-  if (showDialog) {
-    fill('white');
-    strokeWeight(3);
-    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
-    fill('black');
-    strokeWeight(0);
-    textAlign(LEFT);
-    text('モンスターの数を設定', SIZE * 2, SIZE * 2);
-    for (const button of buttons) {
-      button.draw();
-    }
+  if (dialog) {
+    monsterNumberDialog.draw();
   }
 }
 
 function touchStarted() {
-  if (showDialog) {
-    const button = buttons.find((b) => b.collid(mouseX, mouseY));
-    if (button) {
-      Monster.setup(button.id);
-    }
+  if (dialog) {
+    dialog.touchStarted();
   } else {
     locked = true;
-    target = pcs.find((pc) => pc.collid(mouseX, mouseY));
-    target = target || monsters.find((monster) => monster.collid(mouseX, mouseY));
-    target = target || (spell.collid(mouseX, mouseY) ? spell : null);
+    target = pcs.find((pc) => pc.collid());
+    target = target || monsters.find((monster) => monster.collid());
+    target = target || (spell.collid() ? spell : null);
   }
   return false;
 }
 
+function touchMoved() {
+  moved = true;
+  return false;
+}
+
 function touchEnded() {
-  locked = false;
   if (target) {
-    target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
+    if (moved) {
+      target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
+    } else {
+      Monster.setup(3);
+    }
   } else {
-    showDialog = !showDialog;
+    dialog = dialog ? null : monsterNumberDialog;
   }
+  locked = false;
+  moved = false;
 }
