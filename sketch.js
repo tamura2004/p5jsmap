@@ -15,6 +15,7 @@ let pcs = [];
 let monsters = [];
 let buttons = [];
 let monsterNumberDialog = null;
+let monsterDamageDialog = null;
 let dialog = null;
 
 function *nodes() {
@@ -119,7 +120,8 @@ class Monster extends Node{
     const y = Math.floor(Math.random() * 3 + 12);
     const p = expand(x, y);
     super(p, id, `${id}`, '#de9610');
-    this.damage = random() / 2 + 0.5;
+    this.hp = 100;
+    this.damage = 20;
   }
   draw() {
     super.draw();
@@ -134,7 +136,7 @@ class Monster extends Node{
     fill('red');
     rect(x, y, w, h);
     fill('lime');
-    rect(x, y, w * this.damage, h);
+    rect(x, y, w * (this.hp - this.damage) / this.hp, h);
   }
 }
 
@@ -159,6 +161,33 @@ class Button extends Node {
   }
 }
 
+class MonsterDamageDialog {
+  constructor() {
+    const nums = [7,8,9,4,5,6,1,2,3,0];
+    this.buttons = [];
+    for (let i = 0; i < 10; i++) {
+      const n = nums[i];
+      const x = (i % 3) * SIZE + SIZE * 2.5;
+      const y = Math.floor(i / 3) * SIZE + SIZE * 3.5;
+      this.buttons.push(new Button(n, x, y));
+    }
+  }
+  draw() {
+    fill('white');
+    strokeWeight(3);
+    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
+    fill('black');
+    strokeWeight(0);
+    textAlign(LEFT);
+    text('ダメージ', SIZE * 2, SIZE * 2);
+    for (const button of this.buttons) {
+      button.draw();
+    }
+  }
+  touchStarted() {
+
+  }
+}
 class MonsterNumberDialog {
   constructor() {
     this.buttons = [];
@@ -204,6 +233,7 @@ function setup() {
   monsters = new Monsters(6);
   spell = new Spell(createVector(RADIUS, RADIUS))
   monsterNumberDialog = new MonsterNumberDialog();
+  monsterDamageDialog = new MonsterDamageDialog();
 }
 
 function drawMeasure() {
@@ -239,7 +269,7 @@ function draw() {
     node.draw();
   }
   if (dialog) {
-    monsterNumberDialog.draw();
+    dialog.draw();
   }
 }
 
@@ -249,7 +279,7 @@ function touchStarted() {
   } else {
     locked = true;
     target = pcs.find((pc) => pc.touched());
-    target = target || monsters.find((monster) => monster.touched());
+    target = target || Array.from(monsters).find((monster) => monster.touched());
     target = target || (spell.touched() ? spell : null);
   }
   return false;
@@ -265,7 +295,7 @@ function touchEnded() {
     if (moved) {
       target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
     } else {
-      Monster.setup(3);
+      dialog = monsterDamageDialog;
     }
   } else {
     dialog = dialog ? null : monsterNumberDialog;
