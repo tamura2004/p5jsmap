@@ -27,7 +27,7 @@ function *nodes() {
   yield spell;
 }
 
-function collid(ox, oy, size) {
+function touched(ox, oy, size) {
   const x = mouseX;
   const y = mouseY;
   return ox < x && x < ox + size && oy < y && y < oy + size;
@@ -45,8 +45,8 @@ class Tile {
     strokeWeight(1);
     square(this.p.x, this.p.y, SIZE);
   }
-  collid() {
-    return collid(this.p.x, this.p.y, SIZE);
+  touched() {
+    return touched(this.p.x, this.p.y, SIZE);
   }
 }
 
@@ -82,8 +82,8 @@ class Node {
     textAlign(CENTER, CENTER);
     text(this.label, this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
   }
-  collid() {
-    return collid(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
+  touched() {
+    return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
 }
 
@@ -98,8 +98,8 @@ class Pc extends Node {
       this.p = this.q.copy();
     }
   }
-  collid() {
-    return collid(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
+  touched() {
+    return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
 }
 
@@ -114,12 +114,6 @@ class Spell extends Node{
 }
 
 class Monster extends Node{
-  static setup(n) {
-    monsters = [];
-    for (let i = 0; i < n; i++) {
-      monsters.push(new Monster(i + 1));
-    }
-  }
   constructor(id) {
     const x = Math.floor(Math.random() * 11);
     const y = Math.floor(Math.random() * 3 + 12);
@@ -144,6 +138,20 @@ class Monster extends Node{
   }
 }
 
+class Monsters {
+  constructor(n) {
+    this.monsters = [];
+    for (let i = 0; i < n; i++) {
+      this.monsters.push(new Monster(i + 1));
+    }
+  }
+  * [Symbol.iterator]() {
+    for (const monster of this.monsters) {
+      yield monster;
+    }
+  }
+}
+
 class Button extends Node {
   constructor(id, x, y) {
     const p = createVector(x, y);
@@ -151,7 +159,7 @@ class Button extends Node {
   }
 }
 
-class Dialog {
+class MonsterNumberDialog {
   constructor() {
     this.buttons = [];
     for (let i = 0; i < 3; i++) {
@@ -176,9 +184,9 @@ class Dialog {
     }
   }
   touchStarted() {
-    const button = this.buttons.find((b) => b.collid());
+    const button = this.buttons.find((b) => b.touched());
     if (button) {
-      Monster.setup(button.id);
+      monsters = new Monsters(button.id);
     }
   }
 }
@@ -193,10 +201,9 @@ function setup() {
   for (let i = 0; i < NAMES.length; i++) {
     pcs.push(new Pc(i));
   }
-  Monster.setup(6);
+  monsters = new Monsters(6);
   spell = new Spell(createVector(RADIUS, RADIUS))
-  // Button.create();
-  monsterNumberDialog = new Dialog();
+  monsterNumberDialog = new MonsterNumberDialog();
 }
 
 function drawMeasure() {
@@ -218,7 +225,7 @@ function drawMeasure() {
 function draw() {
   background(220);
   for (const tile of tiles) {
-    const color = (tile.collid(mouseX, mouseY) && locked) ? 'white' : (spell.inRange(tile) ? 'pink' : 192);
+    const color = (tile.touched() && locked) ? 'white' : (spell.inRange(tile) ? 'pink' : 192);
     fill(color);
     tile.draw();
   }
@@ -241,9 +248,9 @@ function touchStarted() {
     dialog.touchStarted();
   } else {
     locked = true;
-    target = pcs.find((pc) => pc.collid());
-    target = target || monsters.find((monster) => monster.collid());
-    target = target || (spell.collid() ? spell : null);
+    target = pcs.find((pc) => pc.touched());
+    target = target || monsters.find((monster) => monster.touched());
+    target = target || (spell.touched() ? spell : null);
   }
   return false;
 }
