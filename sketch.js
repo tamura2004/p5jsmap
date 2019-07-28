@@ -7,12 +7,10 @@ const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハク', 'へび'];
 
 let mousePressed = false;
 let target = null;
-
 let tiles = [];
 let pcs = [];
 let monsters = [];
 let spell = null;
-
 let dialog = null;
 let buttons = [];
 
@@ -31,10 +29,6 @@ function touched(ox, oy, size) {
   const y = mouseY;
   return ox < x && x < ox + size && oy < y && y < oy + size;
 }
-
-// function expand(x, y) {
-//   return createVector(x, y).mult(SIZE).add(createVector(RADIUS, RADIUS));
-// }
 
 class Iterable {
   constructor(values) {
@@ -203,8 +197,12 @@ class Buttons extends Iterable {
 class Dialog {
   constructor() {
     this.buttons = new Buttons();
+    this.disable = false;
   }
   draw() {
+    if (this.disable) {
+      return;
+    }
     fill('white');
     strokeWeight(3);
     rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
@@ -220,7 +218,7 @@ class Dialog {
     const button = [...this.buttons].find((b) => b.touched());
     if (button) {
       monsters = new Monsters(button.id);
-      dialog = null;
+      this.disable = true;
     }
   }
 }
@@ -265,13 +263,13 @@ function draw() {
     node.move();
     node.draw();
   }
-  if (dialog) {
+  if (!dialog.disable) {
     dialog.draw();
   }
 }
 
 function touchStarted() {
-  if (dialog) {
+  if (!dialog.disable) {
     dialog.touchStarted();
   } else {
     mousePressed = true;
