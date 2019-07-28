@@ -12,6 +12,7 @@ let tiles = [];
 let pcs = [];
 let monsters = [];
 let spell = null;
+
 let dialog = null;
 let buttons = [];
 
@@ -31,9 +32,9 @@ function touched(ox, oy, size) {
   return ox < x && x < ox + size && oy < y && y < oy + size;
 }
 
-function expand(x, y) {
-  return createVector(x, y).mult(SIZE).add(createVector(RADIUS, RADIUS));
-}
+// function expand(x, y) {
+//   return createVector(x, y).mult(SIZE).add(createVector(RADIUS, RADIUS));
+// }
 
 class Iterable {
   constructor(values) {
@@ -73,12 +74,13 @@ class Tiles extends Iterable {
 }
 
 class Node {
-  constructor(p, id, label, color) {
-    this.id = id;
+  constructor(x, y, label, color) {
     this.label = label;
     this.color = color;
-    this.p = p;
-    this.q = p.copy();
+    this.x = x;
+    this.y = y;
+    this.p = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
+    this.q = this.p.copy();
   }
   move() {
     this.p.add(this.q.copy().sub(this.p).div(4));
@@ -107,12 +109,14 @@ class Node {
   touched() {
     return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
+  setQ(x, y) {
+    this.q = createVector(int(x / SIZE) * SIZE + RADIUS, int(y / SIZE) * SIZE + RADIUS);
+  }
 }
 
 class Pc extends Node {
   constructor(id) {
-    const p = expand(id + 3, 0);
-    super(p, id, NAMES[id], '#65ace4');
+    super(id + 3, 0, NAMES[id], '#65ace4');
   }
 }
 
@@ -126,9 +130,9 @@ class Pcs extends Iterable {
   }
 }
 
-class Spell extends Node{
-  constructor(p, id) {
-    super(p, id, '火', '#c93a40');
+class Spell extends Node {
+  constructor(x, y) {
+    super(x, y, '火', '#c93a40');
     this.r = 20;
   }
   inRange(tile) {
@@ -140,8 +144,7 @@ class Monster extends Node {
   constructor(id) {
     const x = Math.floor(Math.random() * 11);
     const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
-    const p = expand(x, y);
-    super(p, id, `${id}`, '#de9610');
+    super(x, y, `${id}`, '#de9610');
     this.hp = 100;
     this.damage = 20;
   }
@@ -179,22 +182,27 @@ class Monsters extends Iterable {
 
 class Button extends Node {
   constructor(id, x, y) {
-    const p = createVector(x, y);
-    super(p, id, `${id}`, '#56a764');
+    super(x, y, `${id}`, '#56a764');
+    this.id = id;
+  }
+}
+
+class Buttons extends Iterable {
+  constructor() {
+    const buttons = [];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 5; j++) {
+        const n = j + i * 5 + 1;
+        buttons.push(new Button(n, j * 1.5 + 2, i * 1.5 + 3));
+      }
+    }
+    super(buttons);
   }
 }
 
 class Dialog {
   constructor() {
-    this.buttons = [];
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 5; j++) {
-        const n = j + i * 5 + 1;
-        const x = j * SIZE * 1.5 + SIZE * 2.5;
-        const y = i * SIZE * 1.5 + SIZE * 3.5;
-        this.buttons.push(new Button(n, x, y));
-      }
-    }
+    this.buttons = new Buttons();
   }
   draw() {
     fill('white');
@@ -204,12 +212,12 @@ class Dialog {
     strokeWeight(0);
     textAlign(LEFT);
     text('モンスターの数を設定', SIZE * 2, SIZE * 2);
-    for (const button of this.buttons) {
+    for (const button of [...this.buttons]) {
       button.draw();
     }
   }
   touchStarted() {
-    const button = this.buttons.find((b) => b.touched());
+    const button = [...this.buttons].find((b) => b.touched());
     if (button) {
       monsters = new Monsters(button.id);
       dialog = null;
@@ -221,7 +229,8 @@ function setup() {
   createCanvas(WIDTH * SIZE + 1, HEIGHT * SIZE + 1);
   tiles = new Tiles();
   pcs = new Pcs();
-  spell = new Spell(createVector(RADIUS, RADIUS))
+  // monsters = new Monsters(6);
+  spell = new Spell(0, 0)
   dialog =  new Dialog();
 }
 
@@ -275,7 +284,8 @@ function touchStarted() {
 
 function touchEnded() {
   if (target) {
-    target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
+    target.setQ(mouseX, mouseY);
+    // q = createVectorexpand(int(mouseX / SIZE), int(mouseY / SIZE));
   }
   target = null;
   mousePressed = false;
