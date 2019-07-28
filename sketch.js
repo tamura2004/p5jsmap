@@ -5,18 +5,15 @@ const WIDTH = 11;
 const HEIGHT = 15;
 const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハク', 'へび'];
 
-let locked = false;
-let moved = false;
-let tiles = [];
-// let balls = [];
+let mousePressed = false;
 let target = null;
-let spell = null;
+
+let tiles = [];
 let pcs = [];
 let monsters = [];
-let buttons = [];
-let monsterNumberDialog = null;
-let monsterDamageDialog = null;
+let spell = null;
 let dialog = null;
+let buttons = [];
 
 function *nodes() {
   for (const monster of [...monsters]) {
@@ -116,15 +113,6 @@ class Pc extends Node {
   constructor(id) {
     const p = expand(id + 3, 0);
     super(p, id, NAMES[id], '#65ace4');
-  }
-  move() {
-    this.p.add(this.q.copy().sub(this.p).div(4));
-    if (this.p.dist(this.q) < RADIUS) {
-      this.p = this.q.copy();
-    }
-  }
-  touched() {
-    return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
 }
 
@@ -229,14 +217,10 @@ class Dialog {
   }
 }
 
-
 function setup() {
   createCanvas(WIDTH * SIZE + 1, HEIGHT * SIZE + 1);
   tiles = new Tiles();
   pcs = new Pcs();
-  // for (let i = 0; i < NAMES.length; i++) {
-  //   pcs.push(new Pc(i));
-  // }
   spell = new Spell(createVector(RADIUS, RADIUS))
   dialog =  new Dialog();
 }
@@ -258,13 +242,12 @@ function drawMeasure() {
 }
 
 function draw() {
-  background(220);
   for (const tile of [...tiles]) {
-    const color = (tile.touched() && locked) ? 'white' : (spell.inRange(tile) ? 'pink' : 192);
+    const color = (tile.touched() && mousePressed) ? 'white' : (spell.inRange(tile) ? 'pink' : 192);
     fill(color);
     tile.draw();
   }
-  if (locked && target) {
+  if (mousePressed && target) {
     fill(128, 128, 128, 0);
     ellipse(mouseX, mouseY, SIZE - 10);
     drawMeasure();
@@ -282,7 +265,7 @@ function touchStarted() {
   if (dialog) {
     dialog.touchStarted();
   } else {
-    locked = true;
+    mousePressed = true;
     target = [...pcs].find((pc) => pc.touched());
     target = target || [...monsters].find((monster) => monster.touched());
     target = target || (spell.touched() ? spell : null);
@@ -295,5 +278,5 @@ function touchEnded() {
     target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
   }
   target = null;
-  locked = false;
+  mousePressed = false;
 }
