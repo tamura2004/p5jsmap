@@ -36,9 +36,7 @@ function draw() {
     node.move();
     node.draw();
   }
-  if (dialog.visible) {
-    dialog.draw();
-  }
+  dialog.draw();
 }
 
 function touchStarted() {
