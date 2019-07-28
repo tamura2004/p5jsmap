@@ -8,7 +8,7 @@ const NAMES = ['ヴィ', 'レン', 'ロジ', 'ハク', 'へび'];
 let locked = false;
 let moved = false;
 let tiles = [];
-let balls = [];
+// let balls = [];
 let target = null;
 let spell = null;
 let pcs = [];
@@ -19,10 +19,10 @@ let monsterDamageDialog = null;
 let dialog = null;
 
 function *nodes() {
-  for (const monster of monsters) {
+  for (const monster of [...monsters]) {
     yield monster;
   }
-  for (const pc of pcs) {
+  for (const pc of [...pcs]) {
     yield pc;
   }
   yield spell;
@@ -38,16 +38,40 @@ function expand(x, y) {
   return createVector(x, y).mult(SIZE).add(createVector(RADIUS, RADIUS));
 }
 
+class Iterable {
+  constructor(values) {
+    this.values = values;
+  }
+  * [Symbol.iterator]() {
+    for (const value of this.values) {
+      yield value;
+    }
+  }
+}
+
 class Tile {
-  constructor(p) {
-    this.p = p;
+  constructor(x, y) {
+    this.x = x * SIZE;
+    this.y = y * SIZE;
   }
   draw() {
     strokeWeight(1);
-    square(this.p.x, this.p.y, SIZE);
+    square(this.x, this.y, SIZE);
   }
   touched() {
-    return touched(this.p.x, this.p.y, SIZE);
+    return touched(this.x, this.y, SIZE);
+  }
+}
+
+class Tiles extends Iterable {
+  constructor() {
+    const tiles = [];
+    for (let y = 0; y < HEIGHT; y++) {
+      for (let x = 0; x < WIDTH; x++) {
+        tiles.push(new Tile(x, y));
+      }
+    }
+    super(tiles);
   }
 }
 
@@ -104,20 +128,30 @@ class Pc extends Node {
   }
 }
 
+class Pcs extends Iterable {
+  constructor() {
+    const pcs = [];
+    for (let i = 0; i < NAMES.length; i++) {
+      pcs.push(new Pc(i));
+    }
+    super(pcs);
+  }
+}
+
 class Spell extends Node{
   constructor(p, id) {
     super(p, id, '火', '#c93a40');
     this.r = 20;
   }
   inRange(tile) {
-    return dist(this.p.x, this.p.y, tile.p.x + RADIUS, tile.p.y + RADIUS) < this.r * SIZE / 5 + 0.2;
+    return dist(this.p.x, this.p.y, tile.x + RADIUS, tile.y + RADIUS) < this.r * SIZE / 5 + 0.2;
   }
 }
 
-class Monster extends Node{
+class Monster extends Node {
   constructor(id) {
     const x = Math.floor(Math.random() * 11);
-    const y = Math.floor(Math.random() * 3 + 12);
+    const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
     const p = expand(x, y);
     super(p, id, `${id}`, '#de9610');
     this.hp = 100;
@@ -140,17 +174,18 @@ class Monster extends Node{
   }
 }
 
-class Monsters {
+class Monsters extends Iterable {
   constructor(n) {
-    this.monsters = [];
-    for (let i = 0; i < n; i++) {
-      this.monsters.push(new Monster(i + 1));
+    const monsters = [];
+    let i = 1;
+    while (monsters.length < n) {
+      const monster = new Monster(i);
+      if (monsters.every((m) => m.p.x !== monster.p.x || m.p.y !== monster.p.y)) {
+        monsters.push(monster);
+        i++;
+      }
     }
-  }
-  * [Symbol.iterator]() {
-    for (const monster of this.monsters) {
-      yield monster;
-    }
+    super(monsters);
   }
 }
 
@@ -161,33 +196,7 @@ class Button extends Node {
   }
 }
 
-class MonsterDamageDialog {
-  constructor() {
-    const nums = [7,8,9,4,5,6,1,2,3,0];
-    this.buttons = [];
-    for (let i = 0; i < 10; i++) {
-      const n = nums[i];
-      const x = (i % 3) * SIZE * 1.2 + SIZE * 2.5;
-      const y = Math.floor(i / 3) * SIZE * 1.2 + SIZE * 3.5;
-      this.buttons.push(new Button(n, x, y));
-    }
-  }
-  draw() {
-    fill('white');
-    strokeWeight(3);
-    rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 8);
-    fill('black');
-    strokeWeight(0);
-    textAlign(LEFT);
-    text('モンスターへのダメージ', SIZE * 2, SIZE * 2);
-    for (const button of this.buttons) {
-      button.draw();
-    }
-  }
-  touchStarted() {
-  }
-}
-class MonsterNumberDialog {
+class Dialog {
   constructor() {
     this.buttons = [];
     for (let i = 0; i < 3; i++) {
@@ -215,24 +224,21 @@ class MonsterNumberDialog {
     const button = this.buttons.find((b) => b.touched());
     if (button) {
       monsters = new Monsters(button.id);
+      dialog = null;
     }
   }
 }
 
+
 function setup() {
   createCanvas(WIDTH * SIZE + 1, HEIGHT * SIZE + 1);
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      tiles.push(new Tile(createVector(x * SIZE, y * SIZE)));
-    }
-  }
-  for (let i = 0; i < NAMES.length; i++) {
-    pcs.push(new Pc(i));
-  }
-  monsters = new Monsters(6);
+  tiles = new Tiles();
+  pcs = new Pcs();
+  // for (let i = 0; i < NAMES.length; i++) {
+  //   pcs.push(new Pc(i));
+  // }
   spell = new Spell(createVector(RADIUS, RADIUS))
-  monsterNumberDialog = new MonsterNumberDialog();
-  monsterDamageDialog = new MonsterDamageDialog();
+  dialog =  new Dialog();
 }
 
 function drawMeasure() {
@@ -253,7 +259,7 @@ function drawMeasure() {
 
 function draw() {
   background(220);
-  for (const tile of tiles) {
+  for (const tile of [...tiles]) {
     const color = (tile.touched() && locked) ? 'white' : (spell.inRange(tile) ? 'pink' : 192);
     fill(color);
     tile.draw();
@@ -277,28 +283,17 @@ function touchStarted() {
     dialog.touchStarted();
   } else {
     locked = true;
-    target = pcs.find((pc) => pc.touched());
-    target = target || Array.from(monsters).find((monster) => monster.touched());
+    target = [...pcs].find((pc) => pc.touched());
+    target = target || [...monsters].find((monster) => monster.touched());
     target = target || (spell.touched() ? spell : null);
   }
   return false;
 }
 
-function touchMoved() {
-  moved = true;
-  return false;
-}
-
 function touchEnded() {
   if (target) {
-    if (moved) {
-      target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
-    } else {
-      dialog = dialog ? null : monsterDamageDialog;
-    }
-  } else {
-    dialog = dialog ? null : monsterNumberDialog;
+    target.q = expand(int(mouseX / SIZE), int(mouseY / SIZE));
   }
+  target = null;
   locked = false;
-  moved = false;
 }
