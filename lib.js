@@ -82,8 +82,11 @@ class Unit {
   touched() {
     return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
-  setQ(x, y) {
-    this.q = createVector(int(x / SIZE) * SIZE + RADIUS, int(y / SIZE) * SIZE + RADIUS);
+  setQ() {
+    const x = int(mouseX / SIZE);
+    const y = int(mouseY / SIZE);
+    this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
+    db.collection('units').doc(this.id).update({x, y});
   }
   modify({x, y}) {
     this.x = x;
