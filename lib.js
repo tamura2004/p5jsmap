@@ -1,13 +1,3 @@
-function *nodes() {
-  for (const monster of [...monsters]) {
-    yield monster;
-  }
-  for (const pc of [...pcs]) {
-    yield pc;
-  }
-  yield spell;
-}
-
 function touched(ox, oy, size) {
   const x = mouseX;
   const y = mouseY;
@@ -51,12 +41,17 @@ class Tiles extends Iterable {
   }
 }
 
-class Node {
-  constructor(x, y, label, color) {
-    this.label = label;
-    this.color = color;
+class Unit {
+  constructor(id, {x, y, name, type, visible, hp, damage}) {
+    this.id = id;
     this.x = x;
     this.y = y;
+    this.name = name;
+    this.type = type;
+    this.visible = visible;
+    this.hp = hp;
+    this.damage = damage;
+    this.color = COLORS[type];
     this.p = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
     this.q = this.p.copy();
   }
@@ -82,7 +77,7 @@ class Node {
     stroke('black');
     strokeWeight(6);
     textAlign(CENTER, CENTER);
-    text(this.label, this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
+    text(this.name, this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
   }
   touched() {
     return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
@@ -90,27 +85,22 @@ class Node {
   setQ(x, y) {
     this.q = createVector(int(x / SIZE) * SIZE + RADIUS, int(y / SIZE) * SIZE + RADIUS);
   }
-}
-
-class Pc extends Node {
-  constructor(id) {
-    super(id + 3, 0, NAMES[id], '#65ace4');
+  modify({x, y}) {
+    this.x = x;
+    this.y = y;
+    this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
   }
 }
 
-class Pcs extends Iterable {
-  constructor() {
-    const pcs = [];
-    for (let i = 0; i < NAMES.length; i++) {
-      pcs.push(new Pc(i));
-    }
-    super(pcs);
+class Pc extends Unit {
+  constructor(id, init) {
+    super(id, init);
   }
 }
 
-class Spell extends Node {
-  constructor(x, y) {
-    super(x, y, '火', '#c93a40');
+class Spell extends Unit {
+  constructor(id, init) {
+    super(id, {...init, name: '火'});
     this.r = 20;
   }
   inRange(tile) {
@@ -118,13 +108,9 @@ class Spell extends Node {
   }
 }
 
-class Monster extends Node {
-  constructor(id) {
-    const x = Math.floor(Math.random() * 11);
-    const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
-    super(x, y, `${id}`, '#de9610');
-    this.hp = 100;
-    this.damage = 20;
+class Monster extends Unit {
+  constructor(id, init) {
+    super(id, init);
   }
   draw() {
     super.draw();
@@ -143,18 +129,28 @@ class Monster extends Node {
   }
 }
 
-class Monsters extends Iterable {
-  constructor(n) {
-    const monsters = [];
-    let i = 1;
-    while (monsters.length < n) {
-      const monster = new Monster(i);
-      if (monsters.every((m) => m.p.x !== monster.p.x || m.p.y !== monster.p.y)) {
-        monsters.push(monster);
-        i++;
-      }
+class Units {
+  constructor() {
+    this.map = new Map();
+  }
+  add(id, data) {
+    const fn = data.type === 'PC' ? Pc : (data.type === 'MONSTER' ? Monster : Spell);
+    this.map.set(id, new fn(id, data));
+  }
+  modify(id, data) {
+    let unit = this.map.get(id);
+    unit.modify(data);
+  }
+  remove(id) {
+    this.map.delete(id);
+  }
+  inRange(tile) {
+    return [...this].some((unit) => unit.type === 'SPELL' && unit.inRange(tile));
+  }
+  * [Symbol.iterator]() {
+    for (const value of this.map.values()) {
+      yield value;
     }
-    super(monsters);
   }
 }
 
@@ -173,7 +169,7 @@ class Measure {
       const d = dist(x, y, mx, my);
       strokeWeight(1);
       fill(128, 128, 128, 0);
-      ellipse(mouseX, mouseY, SIZE - 10);  
+      ellipse(mouseX, mouseY, SIZE - 10);
       line(x, y, mx, my);
       textSize(64);
       fill(250);
@@ -182,62 +178,12 @@ class Measure {
       text(`${int(d / SIZE) * 5}feet`, tx, ty);
     }
   }
-  touchStarted(pcs, monsters, spell) {
-    this.target = [...pcs].find((pc) => pc.touched());
-    this.target = this.target || [...monsters].find((monster) => monster.touched());
-    this.target = this.target || (spell.touched() ? spell : null);
+  touchStarted(units) {
+    this.target = [...units].find((unit) => unit.touched());
   }
   touchEnded() {
     if (this.target) {
       this.target.setQ(mouseX, mouseY);
-    }
-  }
-}
-
-class Button extends Node {
-  constructor(id, x, y) {
-    super(x, y, `${id}`, '#56a764');
-    this.id = id;
-  }
-}
-
-class Buttons extends Iterable {
-  constructor() {
-    const buttons = [];
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 5; j++) {
-        const n = j + i * 5 + 1;
-        buttons.push(new Button(n, j * 1.5 + 2, i * 1.5 + 3));
-      }
-    }
-    super(buttons);
-  }
-}
-
-class Dialog {
-  constructor() {
-    this.buttons = new Buttons();
-    this.visible = true;
-  }
-  draw() {
-    if (this.visible) {
-      fill('white');
-      strokeWeight(3);
-      rect(SIZE * 1.5, SIZE * 1.5, SIZE * 8, SIZE * 6);
-      fill('black');
-      strokeWeight(0);
-      textAlign(LEFT);
-      text('モンスターの数を設定', SIZE * 2, SIZE * 2);
-      for (const button of [...this.buttons]) {
-        button.draw();
-      }
-    }
-  }
-  touchStarted() {
-    const button = [...this.buttons].find((b) => b.touched());
-    if (button) {
-      monsters = new Monsters(button.id);
-      this.visible = false;
     }
   }
 }
