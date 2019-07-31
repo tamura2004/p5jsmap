@@ -1,33 +1,40 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
     <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-firestore.js"></script>
     <script src="firebase.js"></script>
   </head>
   <body>
     <div id="app">
-      <ul>
-        <li v-for="unit in units" key="unit.key">
-          <input type="checkbox" v-model="unit.visible">
-          <input v-model="unit.name">
-        </li>
-      </ul>
+      <h1>Control Panel</h1>
+      <section class="section">
+        <h2>num</h2>
+        <b-field grouped>
+          <b-numberinput v-model="num"></b-numberinput>
+          <div class="control">
+            <button class="button is-info">更新</button>
+          </div>
+        </b-field>
+      </section>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
     <script>
       var vm = new Vue({
         el: '#app',
         data: {
           units: [],
-          a: 1,
+          num: 1,
         },
         created() {
           db.collection('units').get().then((snapshot) => {
             snapshot.forEach((doc) => {
               const key = doc.id;
               let {type, visible, x, y, name, hp, damage} = doc.data();
-              console.log(this);
               this.units.push({key, type, visible, x, y, name, hp, damage});
             });
           });
