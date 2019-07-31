@@ -62,8 +62,10 @@ class Unit {
     }
   }
   draw() {
-    this.drawFrame();
-    this.drawLabel();
+    if (this.visible) {
+      this.drawFrame();
+      this.drawLabel();
+    }
   }
   drawFrame() {
     fill(this.color);
@@ -88,9 +90,10 @@ class Unit {
     this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
     db.collection('units').doc(this.id).update({x, y});
   }
-  modify({x, y}) {
+  modify({x, y, visible}) {
     this.x = x;
     this.y = y;
+    this.visible = visible;
     this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
   }
 }
