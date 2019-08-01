@@ -19,6 +19,14 @@
             <button class="button is-info">更新</button>
           </div>
         </b-field>
+        <div class="list">
+          <div class="list-item" v-for="unit in units">
+            <b-checkbox v-model="unit.visible" @input="toggle(unit)">
+              {{ unit.type }}
+              {{ unit.name }}
+            </b-checkbox>
+          </div>
+        </div>
       </section>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
@@ -29,6 +37,16 @@
         data: {
           units: [],
           num: 1,
+        },
+        methods: {
+          toggle(unit) {
+            db.collection('units').doc(unit.key).update({
+              visible: unit.visible,
+            })
+            .catch((err) => {
+              alert(err);
+            });
+          },
         },
         created() {
           db.collection('units').get().then((snapshot) => {
