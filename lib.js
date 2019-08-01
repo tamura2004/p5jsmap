@@ -62,10 +62,8 @@ class Unit {
     }
   }
   draw() {
-    if (this.visible) {
-      this.drawFrame();
-      this.drawLabel();
-    }
+    this.drawFrame();
+    this.drawLabel();
   }
   drawFrame() {
     fill(this.color);

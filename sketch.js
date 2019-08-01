@@ -13,8 +13,10 @@ let spell = null;
 let measure = null;
 let nodes = [];
 let units = [];
+let bg;
 
 function setup() {
+  bg = loadImage('map001.png');
   createCanvas(WIDTH * SIZE + 1, HEIGHT * SIZE + 1);
   tiles = new Tiles();
   spell = new Spell({x: 0, y: 0, type: 'SPELL'});
@@ -36,17 +38,25 @@ function setup() {
 }
 
 function draw() {
+  background(bg);
   for (const tile of [...tiles]) {
-    const color = (tile.touched() && mousePressed) ? 'white' : (units.inRange(tile) ? 'pink' : 192);
-    fill(color);
+    if (tile.touched() && mousePressed) {
+      fill('white');
+    } else if (units.inRange(tile)) {
+      fill(256, 64, 64, 128);
+    } else {
+      noFill();
+    }
     tile.draw();
   }
   if (mousePressed) {
     measure.draw();
   }
   for (const unit of [...units]) {
-    unit.move();
-    unit.draw();
+    if (unit.visible) {
+      unit.move();
+      unit.draw();
+    }
   }
 }
 
