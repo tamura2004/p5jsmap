@@ -14,6 +14,7 @@ let measure = null;
 let nodes = [];
 let units = [];
 let bg;
+let filename;
 
 function setup() {
   bg = loadImage('map001.png');
@@ -32,6 +33,16 @@ function setup() {
         units.modify(id, data);
       } else if (change.type === 'removed') {
         units.remove(id);
+      }
+    });
+  });
+  db.collection('battlemaps').onSnapshot((snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      const key = change.doc.id;
+      const data = change.doc.data();
+      if (key === 'selected') {
+        filename = data.filename;
+        bg = loadImage(filename);
       }
     });
   });

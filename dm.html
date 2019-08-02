@@ -10,9 +10,15 @@
   </head>
   <body>
     <div id="app">
-      <h1>Control Panel</h1>
       <section class="section">
-        <h2>num</h2>
+        <b-field label="マップ">
+          <b-select v-model="filename" @input="changeMap">
+            <option v-for="map in battlemaps" :value="map.filename">
+              {{ map.name }}
+            </option>
+          </b-select>
+        </b-field>
+        <h1>モンスター</h1>
         <b-field grouped>
           <b-numberinput v-model="num"></b-numberinput>
           <div class="control">
@@ -20,10 +26,10 @@
           </div>
         </b-field>
         <div class="list">
-          <div class="list-item" v-for="unit in units">
-            <b-checkbox v-model="unit.visible" @input="toggle(unit)">
-              {{ unit.type }}
-              {{ unit.name }}
+          <div class="list-item" v-for="monster in monsters">
+            <b-checkbox v-model="monster.visible" @input="toggle(monster)">
+              {{ monster.type }}
+              {{ monster.name }}
             </b-checkbox>
           </div>
         </div>
@@ -36,7 +42,16 @@
         el: '#app',
         data: {
           units: [],
-          num: 1,
+          battlemaps: [],
+          filename: 'map001.png',
+          num: 4,
+        },
+        computed: {
+          monsters() {
+            return this.units
+              .filter((unit) => unit.type === 'MONSTER')
+              .sort((a, b) => a.index > b.index ? 1 : -1);
+          },
         },
         methods: {
           toggle(unit) {
@@ -47,33 +62,78 @@
               alert(err);
             });
           },
+          changeMap() {
+            db.collection('battlemaps').doc('selected').update({filename: this.filename});
+            console.log(this.filename);
+          },
           reset() {
-            const pos = [];
-            while (pos.length < 15) {
+            let pos = [];
+            while (pos.length < this.num) {
               const x = Math.floor(Math.random() * 11);
-              const y = Math.floor(15 + 3 * Math.log(1 - Math.random()));
-              if (pos.every(([px, py]) => px !== x || py !== y)) {
-                pos.push([x,y]);
+              const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
+              if (pos.every(p => p.x !== x || p.y !== y)) {
+                pos.push({x, y});
               }
             }
+            pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
             let i = 0;
-            for (const unit of this.units) {
-              if (unit.type === 'MONSTER') {
-                const [x, y] = pos[i];
+            
+            for (const monster of this.monsters) {
+              if (i < this.num) {
+                const x = pos[i].x;
+                const y = pos[i].y;
+                const visible = true;
                 i++;
-                db.collection('units').doc(unit.key).update({x, y});
+                db.collection('units').doc(monster.key).update({x, y, visible});
+              } else {
+                const visible = false;
+                db.collection('units').doc(monster.key).update({visible});
               }
             }
           }
         },
         created() {
-          db.collection('units').get().then((snapshot) => {
-            snapshot.forEach((doc) => {
-              const key = doc.id;
-              let {type, visible, x, y, name, hp, damage} = doc.data();
-              this.units.push({key, type, visible, x, y, name, hp, damage});
+          db.collection('battlemaps').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+              const key = change.doc.id;
+              const data = change.doc.data();
+              if (change.type === 'added') {
+                if (key === 'selected') {
+                  this.mapid = data.mapid;
+                } else {
+                  let {name, filename, index} = data;
+                  this.battlemaps.push({key, name, filename, index});
+                }
+              }
             });
           });
+          db.collection('units').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+              const key = change.doc.id;
+              const data = change.doc.data();
+              if (change.type === 'added') {
+                let {type, visible, x, y, name, hp, damage, index} = data;
+                this.units.push({key, type, visible, x, y, name, hp, damage, index});
+              } else if (change.type === 'modified') {
+                let {visible, x, y} = data;
+                const unit = this.units.find((unit) => unit.key === key);
+                Object.assign(unit, {visible, x, y});
+              }
+            });
+          });
+          //   snapshot.forEach((doc) => {
+          //     const key = doc.id;
+          //     let {type, visible, x, y, name, hp, damage, index} = doc.data();
+          //     this.units.push({key, type, visible, x, y, name, hp, damage, index});
+          //   });
+          // });
+          // db.collection('units').get().then((snapshot) => {
+          //   snapshot.forEach((doc) => {
+          //     const key = doc.id;
+          //     let {type, visible, x, y, name, hp, damage, index} = doc.data();
+          //     this.units.push({key, type, visible, x, y, name, hp, damage, index});
+          //   });
+          // });
         },
       });
     </script>
