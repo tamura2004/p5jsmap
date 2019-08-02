@@ -11,26 +11,48 @@
   <body>
     <div id="app">
       <section class="section">
-        <b-field label="マップ">
-          <b-select v-model="filename" @input="changeMap">
-            <option v-for="map in battlemaps" :value="map.filename">
-              {{ map.name }}
-            </option>
-          </b-select>
-        </b-field>
-        <h1>モンスター</h1>
-        <b-field grouped>
-          <b-numberinput v-model="num"></b-numberinput>
-          <div class="control">
-            <button class="button is-info" @click="reset">更新</button>
+        <div class="box">
+          <h1 class="title">マップ</h1>
+          <b-field>
+            <b-select v-model="filename" @input="changeMap">
+              <option v-for="map in battlemaps" :value="map.filename">
+                {{ map.name }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
+        <div class="box">
+          <h1 class="title">モンスター</h1>
+          <b-field grouped>
+            <b-numberinput v-model="num"></b-numberinput>
+            <div class="control">
+              <button class="button is-info" @click="reset">更新</button>
+            </div>
+          </b-field>
+          <div class="list">
+            <div class="list-item" v-for="monster in monsters">
+              <b-checkbox v-model="monster.visible" @input="toggle(monster)">
+                {{ monster.type }}
+                {{ monster.name }}
+              </b-checkbox>
+            </div>
           </div>
-        </b-field>
-        <div class="list">
-          <div class="list-item" v-for="monster in monsters">
-            <b-checkbox v-model="monster.visible" @input="toggle(monster)">
-              {{ monster.type }}
-              {{ monster.name }}
-            </b-checkbox>
+        </div>
+        <div class="box">
+          <h1 class="title">プレイヤー</h1>
+          <b-field grouped>
+            <b-numberinput v-model="pnum"></b-numberinput>
+            <div class="control">
+              <button class="button is-info" @click="preset">更新</button>
+            </div>
+          </b-field>
+          <div class="list">
+            <div class="list-item" v-for="player in players">
+              <b-checkbox v-model="player.visible" @input="toggle(player)">
+                {{ player.type }}
+                {{ player.name }}
+              </b-checkbox>
+            </div>
           </div>
         </div>
       </section>
@@ -45,6 +67,7 @@
           battlemaps: [],
           filename: 'map001.png',
           num: 4,
+          pnum: 4,
         },
         computed: {
           monsters() {
@@ -52,6 +75,11 @@
               .filter((unit) => unit.type === 'MONSTER')
               .sort((a, b) => a.index > b.index ? 1 : -1);
           },
+          players() {
+            return this.units
+              .filter((unit) => unit.type === 'PC')
+              .sort((a, b) => a.index > b.index ? 1 : -1);
+          }
         },
         methods: {
           toggle(unit) {
@@ -64,7 +92,6 @@
           },
           changeMap() {
             db.collection('battlemaps').doc('selected').update({filename: this.filename});
-            console.log(this.filename);
           },
           reset() {
             let pos = [];
@@ -90,7 +117,31 @@
                 db.collection('units').doc(monster.key).update({visible});
               }
             }
-          }
+          },
+          preset() {
+            let pos = [];
+            while (pos.length < this.pnum) {
+              const x = 3 + Math.floor(Math.random() * 5);
+              const y = Math.floor(-Math.log(1 - Math.random()));
+              if (pos.every(p => p.x !== x || p.y !== y)) {
+                pos.push({x, y});
+              }
+            }
+            pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
+            let i = 0;
+            for (const player of this.players) {
+              if (i < this.pnum) {
+                const x = pos[i].x;
+                const y = pos[i].y;
+                const visible = true;
+                i++;
+                db.collection('units').doc(player.key).update({x, y, visible});
+              } else {
+                const visible = false;
+                db.collection('units').doc(player.key).update({visible});
+              }
+            }
+          },
         },
         created() {
           db.collection('battlemaps').onSnapshot((snapshot) => {
