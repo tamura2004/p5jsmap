@@ -76,10 +76,48 @@
           </b-field>
           <div class="list">
             <div class="list-item" v-for="player in players">
-              <b-checkbox v-model="player.visible" @input="toggle(player)">
-                {{ player.type }}
-                {{ player.name }}
-              </b-checkbox>
+              <div class="columns">
+                <div class="column is-1">
+                  <b-checkbox v-model="player.visible" @input="toggle(player)">
+                    PC{{ player.index + 1 }}
+                  </b-checkbox>
+                </div>
+                <div class="column">
+                  <b-field label="名前" label-position="on-border">
+                    <b-input v-model.lazy="player.name" @blur="updateName(player, $event.target.value)"></b-input>
+                  </b-field>
+                </div>
+                <div class="column">
+                  <b-field label="hp" label-position="on-border">
+                    <b-input type="number" v-model="player.hp"></b-input>
+                  </b-field>
+                </div>
+                <div class="column">
+                  <b-field label="hit" label-position="on-border">
+                    <b-input type="number"></b-input>
+                  </b-field>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="box">
+          <h1 class="title">呪文</h1>
+          <div class="list">
+            <div class="list-item" v-for="spell in spells">
+              <div class="columns">
+                <div class="column">
+                  <b-checkbox v-model="spell.visible" @input="toggle(spell)">
+                    呪文{{ spell.index + 1 }}
+                  </b-checkbox>
+                </div>
+                <div class="column">
+                    <b-field label="名前" label-position="on-border">
+                      <b-input v-model.lazy="spell.name" @blur="updateName(spell, $event.target.value)"></b-input>
+                    </b-field>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -107,13 +145,21 @@
             return this.units
               .filter((unit) => unit.type === 'PC')
               .sort((a, b) => a.index > b.index ? 1 : -1);
-          }
+          },
+          spells() {
+            return this.units
+              .filter((unit) => unit.type === 'SPELL')
+              .sort((a, b) => a.index > b.index ? 1 : -1);
+          },
         },
         methods: {
           hit(monster) {
             const damage = monster.damage + monster.hit;
             monster.hit = 0;
             db.collection('units').doc(monster.key).update({damage});
+          },
+          updateName(player, name) {
+            db.collection('units').doc(player.key).update({name});
           },
           toggle(unit) {
             db.collection('units').doc(unit.key).update({
@@ -187,9 +233,9 @@
                 const hit = 0;
                 this.units.push({key, type, visible, x, y, name, hp, damage, index, hit});
               } else if (change.type === 'modified') {
-                let {visible, x, y, damage} = data;
+                let {visible, x, y, damage, name} = data;
                 const unit = this.units.find((unit) => unit.key === key);
-                Object.assign(unit, {visible, x, y, damage});
+                Object.assign(unit, {visible, x, y, damage, name});
               }
             });
           });

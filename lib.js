@@ -76,7 +76,7 @@ class Unit {
     stroke('black');
     strokeWeight(6);
     textAlign(CENTER, CENTER);
-    text(this.name, this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
+    text(this.name.substr(0, 2), this.p.x - RADIUS + MARGIN, this.p.y - RADIUS, SIZE - MARGIN, SIZE);
   }
   touched() {
     return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
@@ -84,8 +84,9 @@ class Unit {
   go(x, y) {
     db.collection('units').doc(this.id).update({x, y});
   }
-  modify({x, y, visible, damage}) {
+  modify({x, y, visible, damage, name}) {
     this.visible = visible;
+    this.name = name;
     this.damage = Math.min(damage, this.hp);
 
     if (this.x !== x || this.y !== y) {
@@ -110,7 +111,7 @@ class Pc extends Unit {
 
 class Spell extends Unit {
   constructor(id, init) {
-    super(id, {...init, name: '火'});
+    super(id, init);
     this.r = 20;
   }
   inRange(tile) {
