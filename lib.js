@@ -42,7 +42,7 @@ class Tiles extends Iterable {
 }
 
 class Unit {
-  constructor(id, {x, y, name, type, visible, hp, damage}) {
+  constructor(id, {x, y, name, type, visible, hp, damage, index}) {
     this.id = id;
     this.x = x;
     this.y = y;
@@ -51,6 +51,7 @@ class Unit {
     this.visible = visible;
     this.hp = hp;
     this.damage = damage;
+    this.index = index;
     this.color = COLORS[type];
     this.p = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
     this.path = [];
@@ -84,9 +85,10 @@ class Unit {
   go(x, y) {
     db.collection('units').doc(this.id).update({x, y});
   }
-  modify({x, y, visible, damage, name}) {
+  modify({x, y, visible, hp, damage, name}) {
     this.visible = visible;
     this.name = name;
+    this.hp = hp;
     this.damage = Math.min(damage, this.hp);
 
     if (this.x !== x || this.y !== y) {
@@ -208,7 +210,11 @@ class Measure {
       const d = dist(x, y, mx, my);
       strokeWeight(1);
       fill(128, 128, 128, 0);
-      ellipse(mouseX, mouseY, SIZE - 10);
+      if (this.target.type === 'SPELL') {
+        circle(mouseX, mouseY, SIZE * this.target.hp * 2 / 5);
+      } else {
+        circle(mouseX, mouseY, SIZE - 10);
+      }
       line(x, y, mx, my);
       textSize(64);
       fill(250);

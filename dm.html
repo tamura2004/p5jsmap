@@ -1,6 +1,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
     <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
@@ -24,11 +25,23 @@
         </div>
         <div class="box">
           <h1 class="title">モンスター</h1>
-          <b-field grouped>
-            <b-numberinput v-model="num"></b-numberinput>
-            <div class="control">
-              <button class="button is-info" @click="reset">更新</button>
-            </div>
+          <b-field>
+            <p class="control" v-for="i in [-5, -1, 1, 5]">
+              <button class="button has-text-weight-bold" @click="num += i">{{ i > 0 ? `+${i}` : i }}</button>
+            </p>
+            <b-input type="number" icon="ghost" v-model="num"></b-input>
+            <p class="control">
+              <button class="button is-info" @click="reset">数と配置の初期化</button>
+            </p>
+          </b-field>
+          <b-field>
+            <p class="control" v-for="i in [-50, -10, -1, 1, 10, 50]">
+              <button class="button has-text-weight-bold" @click="hp += i">{{ i > 0 ? `+${i}` : i }}</button>
+            </p>
+            <b-input type="number" icon="ghost" v-model="hp"></b-input>
+            <p class="control">
+              <button class="button is-info" @click="updateMonsterHp">hpとダメージの初期化</button>
+            </p>
           </b-field>
           <div class="list">
             <div class="list-item" v-for="monster in monsters">
@@ -44,17 +57,8 @@
                 </div>
                 <div class="column is-half">
                   <b-field>
-                    <p class="control">
-                      <button class="button" @click="monster.hit -= 10">-10</button>
-                    </p>
-                    <p class="control">
-                      <button class="button" @click="monster.hit -= 1">-1</button>
-                    </p>
-                    <p class="control">
-                      <button class="button" @click="monster.hit += 1">+1</button>
-                    </p>
-                    <p class="control">
-                      <button class="button" @click="monster.hit += 10">+10</button>
+                    <p class="control" v-for="i in [-10, -1, 1, 10]">
+                      <button class="button" @click="monster.hit += i">{{ i > 0 ? `+${i}` : i }}</button>
                     </p>
                     <b-input type="number" placeholder="ダメージ" v-model="monster.hit"></b-input>
                     <p class="control">
@@ -133,6 +137,7 @@
           battlemaps: new Battlemap(),
           filename: 'map001.png',
           num: 4,
+          hp: 100,
           pnum: 4,
         },
         computed: {
@@ -171,6 +176,13 @@
           },
           changeMap(filename) {
             db.collection('battlemaps').doc('selected').update({filename});
+          },
+          updateMonsterHp() {
+            for (const monster of this.monsters) {
+              const damage = 0;
+              const hp = this.hp;
+              db.collection('units').doc(monster.key).update({hp, damage});
+            }
           },
           reset() {
             let pos = [];
@@ -233,9 +245,9 @@
                 const hit = 0;
                 this.units.push({key, type, visible, x, y, name, hp, damage, index, hit});
               } else if (change.type === 'modified') {
-                let {visible, x, y, damage, name} = data;
+                let {visible, x, y, hp, damage, name} = data;
                 const unit = this.units.find((unit) => unit.key === key);
-                Object.assign(unit, {visible, x, y, damage, name});
+                Object.assign(unit, {visible, x, y, hp, damage, name});
               }
             });
           });
