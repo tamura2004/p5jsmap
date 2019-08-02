@@ -41,28 +41,6 @@ class Tiles extends Iterable {
   }
 }
 
-// class Position {
-//   static screen(x, y) {
-//     return new Position(int(x / SIZE), int(y / SIZE));
-//   }
-//   static grid(x, y) {
-//     return new Position(x, y);
-//   }
-//   constructor(x, y) {
-//     this.x = x;
-//     this.y = y;
-//   }
-//   get screen() {
-//     return [this.x * SIZE + RADIUS, this.y * SIZE + RADIUS];
-//   }
-//   get grid() {
-//     return [this.x, this.y];
-//   }
-//   get voctor() {
-//     createVector(this.screen);
-//   }
-// }
-
 class Unit {
   constructor(id, {x, y, name, type, visible, hp, damage}) {
     this.id = id;
@@ -75,21 +53,11 @@ class Unit {
     this.damage = damage;
     this.color = COLORS[type];
     this.p = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
-    // this.q = this.p.copy();
     this.path = [];
   }
   move() {
-    // this.p.add(this.q.copy().sub(this.p).div(4));
-    // if (this.p.dist(this.q) < SIZE / 4) {
-    //   this.p = this.q.copy();
-    // }
     if (this.path.length > 0) {
-      // console.log('--------------path');
-      // for (const pt of this.path) {
-      //   console.log(pt);
-      // }
-      const q = this.path.shift();
-      this.p = q;
+      this.p = this.path.shift();
     }
   }
   draw() {
@@ -116,8 +84,9 @@ class Unit {
   go(x, y) {
     db.collection('units').doc(this.id).update({x, y});
   }
-  modify({x, y, visible}) {
+  modify({x, y, visible, damage}) {
     this.visible = visible;
+    this.damage = Math.min(damage, this.hp);
 
     if (this.x !== x || this.y !== y) {
       this.x = x;
@@ -154,7 +123,9 @@ class Monster extends Unit {
     super(id, init);
   }
   draw() {
-    super.draw();
+    if (this.damage < this.hp) {
+      super.draw();
+    }
     this.drawHpBar();
   }
   drawHpBar() {
@@ -173,6 +144,7 @@ class Monster extends Unit {
 class Units {
   constructor() {
     this.map = new Map();
+    new FirestoreListener('units', this);
   }
   add(id, data) {
     const fn = data.type === 'PC' ? Pc : (data.type === 'MONSTER' ? Monster : Spell);
@@ -191,6 +163,31 @@ class Units {
   * [Symbol.iterator]() {
     for (const value of this.map.values()) {
       yield value;
+    }
+  }
+}
+
+class Battlemap {
+  constructor() {
+    this.image = null;
+    this.list = [];
+    new FirestoreListener('battlemaps', this);
+  }
+  load(filename) {
+    if (typeof loadImage !== 'undefined') {
+      this.image = loadImage(filename);
+    }
+  }
+  add(id, data) {
+    if (id === 'selected') {
+      this.load(data.filename);
+    } else {
+      this.list.push({id, ...data})
+    }
+  }
+  modify(id, data) {
+    if (id === 'selected') {
+      this.load(data.filename);
     }
   }
 }

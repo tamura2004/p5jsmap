@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-firestore.js"></script>
     <script src="firebase.js"></script>
+    <script src="lib.js"></script>
   </head>
   <body>
     <div id="app">
@@ -14,8 +15,8 @@
         <div class="box">
           <h1 class="title">マップ</h1>
           <b-field>
-            <b-select v-model="filename" @input="changeMap">
-              <option v-for="map in battlemaps" :value="map.filename">
+            <b-select @input="changeMap($event)">
+              <option v-for="map in battlemaps.list" :value="map.filename">
                 {{ map.name }}
               </option>
             </b-select>
@@ -31,10 +32,37 @@
           </b-field>
           <div class="list">
             <div class="list-item" v-for="monster in monsters">
-              <b-checkbox v-model="monster.visible" @input="toggle(monster)">
-                {{ monster.type }}
-                {{ monster.name }}
-              </b-checkbox>
+              <div class="columns">
+                <div class="column">
+                  <b-checkbox v-model="monster.visible" @input="toggle(monster)">
+                    {{ monster.type }}
+                    {{ monster.name }}
+                  </b-checkbox>
+                </div>
+                <div class="column">
+                  hp {{ monster.hp - monster.damage }} / {{ monster.hp }}
+                </div>
+                <div class="column is-half">
+                  <b-field>
+                    <p class="control">
+                      <button class="button" @click="monster.hit -= 10">-10</button>
+                    </p>
+                    <p class="control">
+                      <button class="button" @click="monster.hit -= 1">-1</button>
+                    </p>
+                    <p class="control">
+                      <button class="button" @click="monster.hit += 1">+1</button>
+                    </p>
+                    <p class="control">
+                      <button class="button" @click="monster.hit += 10">+10</button>
+                    </p>
+                    <b-input type="number" placeholder="ダメージ" v-model="monster.hit"></b-input>
+                    <p class="control">
+                      <button class="button is-info" @click="hit(monster)">ダメージ</button>
+                    </p>
+                  </b-field>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -64,7 +92,7 @@
         el: '#app',
         data: {
           units: [],
-          battlemaps: [],
+          battlemaps: new Battlemap(),
           filename: 'map001.png',
           num: 4,
           pnum: 4,
@@ -82,6 +110,11 @@
           }
         },
         methods: {
+          hit(monster) {
+            const damage = monster.damage + monster.hit;
+            monster.hit = 0;
+            db.collection('units').doc(monster.key).update({damage});
+          },
           toggle(unit) {
             db.collection('units').doc(unit.key).update({
               visible: unit.visible,
@@ -90,8 +123,8 @@
               alert(err);
             });
           },
-          changeMap() {
-            db.collection('battlemaps').doc('selected').update({filename: this.filename});
+          changeMap(filename) {
+            db.collection('battlemaps').doc('selected').update({filename});
           },
           reset() {
             let pos = [];
@@ -104,14 +137,15 @@
             }
             pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
             let i = 0;
-            
+
             for (const monster of this.monsters) {
               if (i < this.num) {
                 const x = pos[i].x;
                 const y = pos[i].y;
                 const visible = true;
+                const damage = 0;
                 i++;
-                db.collection('units').doc(monster.key).update({x, y, visible});
+                db.collection('units').doc(monster.key).update({x, y, visible, damage});
               } else {
                 const visible = false;
                 db.collection('units').doc(monster.key).update({visible});
@@ -144,47 +178,21 @@
           },
         },
         created() {
-          db.collection('battlemaps').onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-              const key = change.doc.id;
-              const data = change.doc.data();
-              if (change.type === 'added') {
-                if (key === 'selected') {
-                  this.mapid = data.mapid;
-                } else {
-                  let {name, filename, index} = data;
-                  this.battlemaps.push({key, name, filename, index});
-                }
-              }
-            });
-          });
           db.collection('units').onSnapshot((snapshot) => {
             snapshot.docChanges().forEach((change) => {
               const key = change.doc.id;
               const data = change.doc.data();
               if (change.type === 'added') {
                 let {type, visible, x, y, name, hp, damage, index} = data;
-                this.units.push({key, type, visible, x, y, name, hp, damage, index});
+                const hit = 0;
+                this.units.push({key, type, visible, x, y, name, hp, damage, index, hit});
               } else if (change.type === 'modified') {
-                let {visible, x, y} = data;
+                let {visible, x, y, damage} = data;
                 const unit = this.units.find((unit) => unit.key === key);
-                Object.assign(unit, {visible, x, y});
+                Object.assign(unit, {visible, x, y, damage});
               }
             });
           });
-          //   snapshot.forEach((doc) => {
-          //     const key = doc.id;
-          //     let {type, visible, x, y, name, hp, damage, index} = doc.data();
-          //     this.units.push({key, type, visible, x, y, name, hp, damage, index});
-          //   });
-          // });
-          // db.collection('units').get().then((snapshot) => {
-          //   snapshot.forEach((doc) => {
-          //     const key = doc.id;
-          //     let {type, visible, x, y, name, hp, damage, index} = doc.data();
-          //     this.units.push({key, type, visible, x, y, name, hp, damage, index});
-          //   });
-          // });
         },
       });
     </script>

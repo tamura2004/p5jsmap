@@ -6,50 +6,19 @@ const HEIGHT = 15;
 const COLORS = { MONSTER: '#de9610', PC: '#65ace4', SPELL: '#c93a40' };
 
 let mousePressed = false;
-let tiles = [];
-let pcs = [];
-let monsters = [];
-let spell = null;
-let measure = null;
-let nodes = [];
-let units = [];
-let bg;
-let filename;
+let tiles = new Tiles();;
+let units = new Units();
+let measure = new Measure();;
+let battlemap = new Battlemap();
 
 function setup() {
-  bg = loadImage('map001.png');
   createCanvas(WIDTH * SIZE + 1, HEIGHT * SIZE + 1);
-  tiles = new Tiles();
-  spell = new Spell({x: 0, y: 0, type: 'SPELL'});
-  measure = new Measure();
-  units = new Units();
-  db.collection('units').onSnapshot((snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      const id = change.doc.id;
-      const data = change.doc.data();
-      if (change.type === 'added') {
-        units.add(id, data);
-      } else if (change.type === 'modified') {
-        units.modify(id, data);
-      } else if (change.type === 'removed') {
-        units.remove(id);
-      }
-    });
-  });
-  db.collection('battlemaps').onSnapshot((snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      const key = change.doc.id;
-      const data = change.doc.data();
-      if (key === 'selected') {
-        filename = data.filename;
-        bg = loadImage(filename);
-      }
-    });
-  });
 }
 
 function draw() {
-  background(bg);
+  if (battlemap.image) {
+    background(battlemap.image);
+  }
   for (const tile of [...tiles]) {
     if (tile.touched() && mousePressed) {
       fill('white');
