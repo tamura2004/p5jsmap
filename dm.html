@@ -16,7 +16,7 @@
         <b-field grouped>
           <b-numberinput v-model="num"></b-numberinput>
           <div class="control">
-            <button class="button is-info">更新</button>
+            <button class="button is-info" @click="reset">更新</button>
           </div>
         </b-field>
         <div class="list">
@@ -47,6 +47,24 @@
               alert(err);
             });
           },
+          reset() {
+            const pos = [];
+            while (pos.length < 15) {
+              const x = Math.floor(Math.random() * 11);
+              const y = Math.floor(15 + 3 * Math.log(1 - Math.random()));
+              if (pos.every(([px, py]) => px !== x || py !== y)) {
+                pos.push([x,y]);
+              }
+            }
+            let i = 0;
+            for (const unit of this.units) {
+              if (unit.type === 'MONSTER') {
+                const [x, y] = pos[i];
+                i++;
+                db.collection('units').doc(unit.key).update({x, y});
+              }
+            }
+          }
         },
         created() {
           db.collection('units').get().then((snapshot) => {

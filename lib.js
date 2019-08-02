@@ -41,6 +41,28 @@ class Tiles extends Iterable {
   }
 }
 
+// class Position {
+//   static screen(x, y) {
+//     return new Position(int(x / SIZE), int(y / SIZE));
+//   }
+//   static grid(x, y) {
+//     return new Position(x, y);
+//   }
+//   constructor(x, y) {
+//     this.x = x;
+//     this.y = y;
+//   }
+//   get screen() {
+//     return [this.x * SIZE + RADIUS, this.y * SIZE + RADIUS];
+//   }
+//   get grid() {
+//     return [this.x, this.y];
+//   }
+//   get voctor() {
+//     createVector(this.screen);
+//   }
+// }
+
 class Unit {
   constructor(id, {x, y, name, type, visible, hp, damage}) {
     this.id = id;
@@ -53,12 +75,21 @@ class Unit {
     this.damage = damage;
     this.color = COLORS[type];
     this.p = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
-    this.q = this.p.copy();
+    // this.q = this.p.copy();
+    this.path = [];
   }
   move() {
-    this.p.add(this.q.copy().sub(this.p).div(4));
-    if (this.p.dist(this.q) < SIZE / 4) {
-      this.p = this.q.copy();
+    // this.p.add(this.q.copy().sub(this.p).div(4));
+    // if (this.p.dist(this.q) < SIZE / 4) {
+    //   this.p = this.q.copy();
+    // }
+    if (this.path.length > 0) {
+      // console.log('--------------path');
+      // for (const pt of this.path) {
+      //   console.log(pt);
+      // }
+      const q = this.path.shift();
+      this.p = q;
     }
   }
   draw() {
@@ -82,17 +113,23 @@ class Unit {
   touched() {
     return touched(this.p.x - RADIUS, this.p.y - RADIUS, SIZE);
   }
-  setQ() {
-    const x = int(mouseX / SIZE);
-    const y = int(mouseY / SIZE);
-    this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
+  go(x, y) {
     db.collection('units').doc(this.id).update({x, y});
   }
   modify({x, y, visible}) {
-    this.x = x;
-    this.y = y;
     this.visible = visible;
-    this.q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
+
+    if (this.x !== x || this.y !== y) {
+      this.x = x;
+      this.y = y;
+      const q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
+      const STEP = 8;
+      for (let i = 0; i < STEP; i++) {
+        const step = (i + 1) / STEP;
+        const amount = 1 - (1 - step) ** 2;
+        this.path.push(p5.Vector.lerp(this.p, q, amount));
+      }
+    }
   }
 }
 
@@ -108,7 +145,7 @@ class Spell extends Unit {
     this.r = 20;
   }
   inRange(tile) {
-    return dist(this.p.x, this.p.y, tile.x + RADIUS, tile.y + RADIUS) < this.r * SIZE / 5 + 0.2;
+    return this.visible && dist(this.p.x, this.p.y, tile.x + RADIUS, tile.y + RADIUS) < this.r * SIZE / 5 + 0.2;
   }
 }
 
@@ -187,7 +224,8 @@ class Measure {
   }
   touchEnded() {
     if (this.target) {
-      this.target.setQ(mouseX, mouseY);
+      this.target.go(int(mouseX / SIZE), int(mouseY / SIZE));
+      this.target = null;
     }
   }
 }
