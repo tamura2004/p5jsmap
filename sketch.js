@@ -4,12 +4,11 @@ const RADIUS = SIZE / 2;
 const WIDTH = 11;
 const HEIGHT = 15;
 const COLORS = { MONSTER: '#de9610', PC: '#65ace4', SPELL: '#c93a40' };
+const STEP = 4; // 移動アニメーションの中割数
 
 let mousePressed = false;
-let tiles = new Tiles();;
-let damage = new Damage();
-let units = new Units(damage);
-let measure = new Measure();;
+let tiles = new Tiles();
+let units = new Units();
 let battlemap = new Battlemap();
 
 function setup() {
@@ -31,7 +30,7 @@ function draw() {
     tile.draw();
   }
   if (mousePressed) {
-    measure.draw();
+    units.measure.draw();
   }
   for (const unit of [...units]) {
     if (unit.visible) {
@@ -39,16 +38,16 @@ function draw() {
       unit.draw();
     }
   }
-  damage.draw();
+  units.damage.draw();
 }
 
 function touchStarted() {
   mousePressed = true;
-  measure.touchStarted(units);
+  units.measure.touchStarted(units);
   return false;
 }
 
 function touchEnded() {
-  measure.touchEnded();
+  units.measure.touchEnded();
   mousePressed = false;
 }

@@ -96,7 +96,6 @@ class Unit {
       this.x = x;
       this.y = y;
       const q = createVector(x * SIZE + RADIUS, y * SIZE + RADIUS);
-      const STEP = 8;
       for (let i = 0; i < STEP; i++) {
         const step = (i + 1) / STEP;
         const amount = 1 - (1 - step) ** 2;
@@ -112,24 +111,23 @@ class Damage {
   }
   hit(num, target) {
     this.num = num;
-    this.count = 255;
+    this.count = 256;
     this.target = target;
     this.x = target.x;
     this.y = target.y;
-    for (let i = 0; i < 30; i++) {
-      target.path.push(p5.Vector.random2D().mult(MARGIN).add(target.p));
-    }
+    sound.play();
   }
   draw() {
     if (this.count > 0) {
-      this.count -= 2;
-      textSize(this.count + 12);
+      this.count -= 64;
+      textSize(64);
       textStyle(BOLD);
-      fill('white');
-      strokeWeight(6);
+      fill(255, 16, 16, this.count);
+      strokeWeight(this.count / 40);
       textAlign(CENTER, CENTER);
-      text(`${this.target.type}${this.target.index}に`, SIZE * WIDTH / 2, SIZE * HEIGHT / 2 - this.count);
-      text(`${this.num}ダメージ`, SIZE * WIDTH / 2, SIZE * HEIGHT / 2);
+      const x = this.target.x * SIZE + RADIUS;
+      const y = this.target.y * SIZE - 64 + this.count / 4;
+      text(this.num, x, y);
     }
   }
 }
@@ -174,10 +172,11 @@ class Monster extends Unit {
 }
 
 class Units {
-  constructor(damage) {
+  constructor() {
     this.map = new Map();
     new FirestoreListener('units', this);
-    this.damage = damage;
+    this.damage = new Damage();
+    this.measure = new Measure();;
   }
   add(id, data) {
     const fn = data.type === 'PC' ? Pc : (data.type === 'MONSTER' ? Monster : Spell);
@@ -186,8 +185,10 @@ class Units {
   modify(id, data) {
     let unit = this.map.get(id);
     const num = data.damage - unit.damage;
+    console.log(num);
+    console.log(unit);
     if (num > 0) {
-      this.damage.hit(data.damage - unit.damage, unit);
+      this.damage.hit(num, unit);
     }
     unit.modify(data);
   }
