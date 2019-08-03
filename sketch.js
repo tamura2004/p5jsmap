@@ -7,7 +7,8 @@ const COLORS = { MONSTER: '#de9610', PC: '#65ace4', SPELL: '#c93a40' };
 
 let mousePressed = false;
 let tiles = new Tiles();;
-let units = new Units();
+let damage = new Damage();
+let units = new Units(damage);
 let measure = new Measure();;
 let battlemap = new Battlemap();
 
@@ -38,6 +39,7 @@ function draw() {
       unit.draw();
     }
   }
+  damage.draw();
 }
 
 function touchStarted() {

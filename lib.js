@@ -69,6 +69,7 @@ class Unit {
     fill(this.color);
     strokeWeight(3);
     circle(this.p.x, this.p.y, SIZE - MARGIN);
+    // circle(this.p.x + RADIUS, this.p.y + RADIUS, SIZE * 2 - MARGIN);
   }
   drawLabel() {
     textSize(32);
@@ -101,6 +102,34 @@ class Unit {
         const amount = 1 - (1 - step) ** 2;
         this.path.push(p5.Vector.lerp(this.p, q, amount));
       }
+    }
+  }
+}
+
+class Damage {
+  constructor() {
+    this.count = 0;
+  }
+  hit(num, target) {
+    this.num = num;
+    this.count = 255;
+    this.target = target;
+    this.x = target.x;
+    this.y = target.y;
+    for (let i = 0; i < 30; i++) {
+      target.path.push(p5.Vector.random2D().mult(MARGIN).add(target.p));
+    }
+  }
+  draw() {
+    if (this.count > 0) {
+      this.count -= 2;
+      textSize(this.count + 12);
+      textStyle(BOLD);
+      fill('white');
+      strokeWeight(6);
+      textAlign(CENTER, CENTER);
+      text(`${this.target.type}${this.target.index}に`, SIZE * WIDTH / 2, SIZE * HEIGHT / 2 - this.count);
+      text(`${this.num}ダメージ`, SIZE * WIDTH / 2, SIZE * HEIGHT / 2);
     }
   }
 }
@@ -145,9 +174,10 @@ class Monster extends Unit {
 }
 
 class Units {
-  constructor() {
+  constructor(damage) {
     this.map = new Map();
     new FirestoreListener('units', this);
+    this.damage = damage;
   }
   add(id, data) {
     const fn = data.type === 'PC' ? Pc : (data.type === 'MONSTER' ? Monster : Spell);
@@ -155,6 +185,7 @@ class Units {
   }
   modify(id, data) {
     let unit = this.map.get(id);
+    this.damage.hit(data.damage - unit.damage, unit);
     unit.modify(data);
   }
   remove(id) {
