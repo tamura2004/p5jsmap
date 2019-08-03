@@ -185,7 +185,10 @@ class Units {
   }
   modify(id, data) {
     let unit = this.map.get(id);
-    this.damage.hit(data.damage - unit.damage, unit);
+    const num = data.damage - unit.damage;
+    if (num > 0) {
+      this.damage.hit(data.damage - unit.damage, unit);
+    }
     unit.modify(data);
   }
   remove(id) {
