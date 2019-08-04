@@ -1,129 +1,65 @@
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
-    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
-    <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-firestore.js"></script>
-    <script src="firebase.js"></script>
-    <script src="lib.js"></script>
-  </head>
-  <body>
-    <div id="app">
-      <section class="section">
-        <div class="box">
-          <h1 class="title">マップ</h1>
-          <b-field>
-            <b-select @input="changeMap($event)">
-              <option v-for="map in battlemaps.list" :value="map.filename">
-                {{ map.name }}
-              </option>
-            </b-select>
-          </b-field>
-        </div>
-        <div class="box">
-          <h1 class="title">モンスター</h1>
-          <h2 class="subtitle">数と配置</h2>
-          <b-field>
-            <p class="control" v-for="i in [-10, -1, 1, 10]">
-              <button class="button has-text-weight-bold" @click="num += i">{{ i > 0 ? `+${i}` : i }}</button>
-            </p>
-            <b-input type="number" v-model="num"></b-input>
-            <p class="control">
-              <button class="button is-info" @click="reset">初期化</button>
-            </p>
-          </b-field>
-          <h2 class="subtitle">hpとダメージ</h2>
-          <b-field>
-            <p class="control" v-for="i in [-10, -1, 1, 10]">
-              <button class="button has-text-weight-bold" @click="hp += i">{{ i > 0 ? `+${i}` : i }}</button>
-            </p>
-            <b-input type="number" v-model="hp"></b-input>
-            <p class="control">
-              <button class="button is-info" @click="updateMonsterHp">初期化</button>
-            </p>
-          </b-field>
-          <div class="list">
-            <div class="list-item" v-for="monster in monsters">
-              <div class="columns">
-                <div class="column">
-                  <b-checkbox v-model="monster.visible" @input="toggle(monster)">
-                    {{ monster.type }}
-                    {{ monster.name }}
-                  </b-checkbox>
-                </div>
-                <div class="column">
-                  hp {{ monster.hp - monster.damage }} / {{ monster.hp }}
-                </div>
-                <div class="column is-half">
-                  <b-field>
-                    <p class="control" v-for="i in [-10, -1, 1, 10]">
-                      <button class="button" @click="monster.hit += i">{{ i > 0 ? `+${i}` : i }}</button>
-                    </p>
-                    <b-input type="number" placeholder="ダメージ" v-model="monster.hit"></b-input>
-                    <p class="control">
-                      <button class="button is-info" @click="hit(monster)">ダメージ</button>
-                    </p>
-                  </b-field>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="box">
-          <h1 class="title">プレイヤー</h1>
-          <h2 class="subtitle">人数と配置</h2>
-          <b-field>
-            <p class="control" v-for="i in [-10, -1, 1, 10]">
-              <button class="button has-text-weight-bold" @click="pnum += i">{{ i > 0 ? `+${i}` : i }}</button>
-            </p>
-            <b-input type="number" v-model="pnum"></b-input>
-            <p class="control">
-              <button class="button is-info" @click="preset">初期化</button>
-            </p>
-          </b-field>
-          <div class="list">
-            <div class="list-item" v-for="player in players">
-              <div class="columns">
-                <div class="column is-1">
-                  <b-checkbox v-model="player.visible" @input="toggle(player)">
-                    PC{{ player.index + 1 }}
-                  </b-checkbox>
-                </div>
-                <div class="column">
-                  <b-field label="名前" label-position="on-border">
-                    <b-input v-model.lazy="player.name" @blur="updateName(player, $event.target.value)"></b-input>
-                  </b-field>
-                </div>
-                <div class="column">
-                  <b-field label="hp" label-position="on-border">
-                    <b-input type="number" v-model="player.hp"></b-input>
-                  </b-field>
-                </div>
-                <div class="column">
-                  <b-field label="hit" label-position="on-border">
-                    <b-input type="number"></b-input>
-                  </b-field>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="box">
-          <h1 class="title">呪文</h1>
-          <div class="list">
-            <div class="list-item" v-for="spell in spells">
-              <div class="columns">
-                <div class="column">
-                  <b-checkbox v-model="spell.visible" @input="toggle(spell)">
-                    呪文{{ spell.index + 1 }}
-                  </b-checkbox>
-                </div>
-                <div class="column">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+  <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+  <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.11.0/firebase-firestore.js"></script>
+  <script src="firebase.js"></script>
+  <script src="lib.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <section class="section">
+      <div class="box">
+        <h1 class="title">マップ</h1>
+        <b-field>
+          <b-select @input="changeMap($event)" v-model="battlemaps.filename">
+            <option v-for="map in battlemaps.list" :value="map.filename">
+              {{ map.name }}
+            </option>
+          </b-select>
+        </b-field>
+      </div>
+      <div class="columns">
+        <!-- プレイヤー -->
+        <div class="column">
+          <div class="box">
+            <h1 class="title">プレイヤー</h1>
+            <b-field>
+              <p class="control" v-for="i in [-10, -1, 1, 10]">
+                <button class="button has-text-weight-bold" @click="pnum += i">{{ i > 0 ? `+${i}` : i }}</button>
+              </p>
+              <b-input type="number" v-model="pnum"></b-input>
+              <p class="control">
+                <button class="button is-info" @click="preset">人</button>
+              </p>
+            </b-field>
+            <div class="list">
+              <div class="list-item" v-for="player in players">
+                <div class="columns">
+                  <div class="column is-1">
+                    <b-checkbox v-model="player.visible" @input="toggle(player)">
+                      PC{{ player.index + 1 }}
+                    </b-checkbox>
+                  </div>
+                  <div class="column">
                     <b-field label="名前" label-position="on-border">
-                      <b-input v-model.lazy="spell.name" @blur="updateName(spell, $event.target.value)"></b-input>
+                      <b-input v-model.lazy="player.name" @blur="updateName(player, $event.target.value)"></b-input>
+                    </b-field>
+                  </div>
+                  <div class="column">
+                    <b-field label="hp" label-position="on-border">
+                      <b-input type="number" v-model="player.hp"></b-input>
+                    </b-field>
+                  </div>
+                  <div class="column">
+                    <b-field label="hit" label-position="on-border">
+                      <b-input type="number"></b-input>
                     </b-field>
                   </div>
                 </div>
@@ -131,134 +67,221 @@
             </div>
           </div>
         </div>
-      </section>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
-    <script>
-      var vm = new Vue({
-        el: '#app',
-        data: {
-          units: [],
-          battlemaps: new Battlemap(),
-          filename: 'map001.png',
-          num: 4,
-          hp: 100,
-          pnum: 4,
+
+        <!-- モンスター -->
+        <div class="column">
+          <div class="box">
+            <h1 class="title">モンスター</h1>
+            <b-field>
+              <p class="control" v-for="i in [-10, -1, 1, 10]">
+                <button class="button has-text-weight-bold" @click="num += i">{{ i > 0 ? `+${i}` : i }}</button>
+              </p>
+              <b-input type="number" v-model="num"></b-input>
+              <p class="control">
+                <button class="button is-info" @click="reset">匹</button>
+              </p>
+            </b-field>
+            <b-field>
+              <p class="control" v-for="i in [-10, -1, 1, 10]">
+                <button class="button has-text-weight-bold" @click="hp += i">{{ i > 0 ? `+${i}` : i }}</button>
+              </p>
+              <b-input type="number" v-model="hp"></b-input>
+              <p class="control">
+                <button class="button is-info" @click="updateMonsterHp">hp</button>
+              </p>
+            </b-field>
+            <div class="list">
+              <div class="list-item" v-for="monster in monsters">
+                <div class="columns">
+                  <div class="column">
+                    <b-checkbox v-model="monster.visible" @input="toggle(monster)">
+                      {{ monster.type }}
+                      {{ monster.name }}
+                    </b-checkbox>
+                  </div>
+                  <div class="column">
+                    hp {{ monster.hp - monster.damage }} / {{ monster.hp }}
+                  </div>
+                  <div class="column is-half">
+                    <b-field>
+                      <p class="control" v-for="i in [1, 10]">
+                        <button class="button" @click="monster.hit += i">{{ i > 0 ? `+${i}` : i }}</button>
+                      </p>
+                      <b-input type="number" placeholder="ダメージ" v-model="monster.hit"></b-input>
+                      <p class="control">
+                        <button class="button is-info" @click="hit(monster)">ダメージ</button>
+                      </p>
+                    </b-field>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="box">
+        <h1 class="title">呪文</h1>
+        <div class="list">
+          <div class="list-item" v-for="spell in spells">
+            <div class="columns">
+              <div class="column">
+                <b-checkbox v-model="spell.visible" @input="toggle(spell)">
+                  呪文{{ spell.index + 1 }}
+                </b-checkbox>
+              </div>
+              <div class="column">
+                <b-field label="名前" label-position="on-border">
+                  <b-input v-model.lazy="spell.name" @blur="updateName(spell, $event.target.value)"></b-input>
+                </b-field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+  </section>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+  <script>
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        units: [],
+        battlemaps: new Battlemap(),
+        filename: 'map001.png',
+        num: 4,
+        hp: 100,
+        pnum: 4,
+      },
+      computed: {
+        monsters() {
+          return this.units
+            .filter((unit) => unit.type === 'MONSTER')
+            .sort((a, b) => a.index > b.index ? 1 : -1);
         },
-        computed: {
-          monsters() {
-            return this.units
-              .filter((unit) => unit.type === 'MONSTER')
-              .sort((a, b) => a.index > b.index ? 1 : -1);
-          },
-          players() {
-            return this.units
-              .filter((unit) => unit.type === 'PC')
-              .sort((a, b) => a.index > b.index ? 1 : -1);
-          },
-          spells() {
-            return this.units
-              .filter((unit) => unit.type === 'SPELL')
-              .sort((a, b) => a.index > b.index ? 1 : -1);
-          },
+        players() {
+          return this.units
+            .filter((unit) => unit.type === 'PC')
+            .sort((a, b) => a.index > b.index ? 1 : -1);
         },
-        methods: {
-          hit(monster) {
-            const damage = monster.damage + monster.hit;
-            monster.hit = 0;
-            db.collection('units').doc(monster.key).update({damage});
-          },
-          updateName(player, name) {
-            db.collection('units').doc(player.key).update({name});
-          },
-          toggle(unit) {
-            db.collection('units').doc(unit.key).update({
-              visible: unit.visible,
-            })
+        spells() {
+          return this.units
+            .filter((unit) => unit.type === 'SPELL')
+            .sort((a, b) => a.index > b.index ? 1 : -1);
+        },
+      },
+      methods: {
+        hit(monster) {
+          const damage = monster.damage + monster.hit;
+          monster.hit = 0;
+          db.collection('units').doc(monster.key).update({ damage });
+        },
+        updateName(player, name) {
+          db.collection('units').doc(player.key).update({ name });
+        },
+        toggle(unit) {
+          db.collection('units').doc(unit.key).update({
+            visible: unit.visible,
+          })
             .catch((err) => {
               alert(err);
             });
-          },
-          changeMap(filename) {
-            db.collection('battlemaps').doc('selected').update({filename});
-          },
-          updateMonsterHp() {
-            for (const monster of this.monsters) {
-              const damage = 0;
-              const hp = this.hp;
-              db.collection('units').doc(monster.key).update({hp, damage});
+        },
+        changeMap(filename) {
+          db.collection('battlemaps').doc('selected').update({ filename });
+        },
+        updateMonsterHp() {
+          for (const monster of this.monsters) {
+            const damage = 0;
+            const hp = this.hp;
+            db.collection('units').doc(monster.key).update({ hp, damage });
+          }
+        },
+        reset() {
+          let pos = [];
+          while (pos.length < this.num) {
+            const x = Math.floor(Math.random() * 11);
+            const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
+            if (pos.every(p => p.x !== x || p.y !== y)) {
+              pos.push({ x, y });
             }
-          },
-          reset() {
-            let pos = [];
-            while (pos.length < this.num) {
-              const x = Math.floor(Math.random() * 11);
-              const y = Math.floor(15 + 2 * Math.log(1 - Math.random()));
-              if (pos.every(p => p.x !== x || p.y !== y)) {
-                pos.push({x, y});
-              }
-            }
-            pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
-            let i = 0;
+          }
+          pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
+          let i = 0;
 
-            for (const monster of this.monsters) {
-              if (i < this.num) {
-                const x = pos[i].x;
-                const y = pos[i].y;
-                const visible = true;
-                const damage = 0;
-                i++;
-                db.collection('units').doc(monster.key).update({x, y, visible, damage});
-              } else {
-                const visible = false;
-                db.collection('units').doc(monster.key).update({visible});
-              }
+          for (const monster of this.monsters) {
+            if (i < this.num) {
+              const x = pos[i].x;
+              const y = pos[i].y;
+              const visible = true;
+              const damage = 0;
+              i++;
+              db.collection('units').doc(monster.key).update({ x, y, visible, damage });
+            } else {
+              const visible = false;
+              db.collection('units').doc(monster.key).update({ visible });
             }
-          },
-          preset() {
-            let pos = [];
-            while (pos.length < this.pnum) {
-              const x = 3 + Math.floor(Math.random() * 5);
-              const y = Math.floor(-Math.log(1 - Math.random()));
-              if (pos.every(p => p.x !== x || p.y !== y)) {
-                pos.push({x, y});
-              }
-            }
-            pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
-            let i = 0;
-            for (const player of this.players) {
-              if (i < this.pnum) {
-                const x = pos[i].x;
-                const y = pos[i].y;
-                const visible = true;
-                i++;
-                db.collection('units').doc(player.key).update({x, y, visible});
-              } else {
-                const visible = false;
-                db.collection('units').doc(player.key).update({visible});
-              }
-            }
-          },
+          }
         },
-        created() {
-          db.collection('units').onSnapshot((snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-              const key = change.doc.id;
-              const data = change.doc.data();
-              if (change.type === 'added') {
-                let {type, visible, x, y, name, hp, damage, index} = data;
-                const hit = 0;
-                this.units.push({key, type, visible, x, y, name, hp, damage, index, hit});
-              } else if (change.type === 'modified') {
-                let {visible, x, y, hp, damage, name} = data;
-                const unit = this.units.find((unit) => unit.key === key);
-                Object.assign(unit, {visible, x, y, hp, damage, name});
-              }
-            });
+        preset() {
+          let pos = [];
+          while (pos.length < this.pnum) {
+            const x = 3 + Math.floor(Math.random() * 5);
+            const y = Math.floor(-Math.log(1 - Math.random()));
+            if (pos.every(p => p.x !== x || p.y !== y)) {
+              pos.push({ x, y });
+            }
+          }
+          pos = pos.sort((a, b) => a.y * 11 + a.x > b.y * 11 + b.x ? 1 : -1);
+          let i = 0;
+          for (const player of this.players) {
+            if (i < this.pnum) {
+              const x = pos[i].x;
+              const y = pos[i].y;
+              const visible = true;
+              i++;
+              db.collection('units').doc(player.key).update({ x, y, visible });
+            } else {
+              const visible = false;
+              db.collection('units').doc(player.key).update({ visible });
+            }
+          }
+        },
+      },
+      created() {
+        db.collection('units').onSnapshot((snapshot) => {
+          snapshot.docChanges().forEach((change) => {
+            const key = change.doc.id;
+            const data = change.doc.data();
+            if (change.type === 'added') {
+              let { type, visible, x, y, name, hp, damage, index } = data;
+              const hit = 0;
+              this.units.push({ key, type, visible, x, y, name, hp, damage, index, hit });
+            } else if (change.type === 'modified') {
+              let { visible, x, y, hp, damage, name } = data;
+              const unit = this.units.find((unit) => unit.key === key);
+              Object.assign(unit, { visible, x, y, hp, damage, name });
+            }
           });
-        },
-      });
-    </script>
-  </body>
+          let num = 0;
+          for (const unit of this.units) {
+            if (unit.type === 'MONSTER' && unit.visible) {
+              num++;
+            }
+          }
+          this.num = num;
+          let pnum = 0;
+          for (const unit of this.units) {
+            if (unit.type === 'PC' && unit.visible) {
+              pnum++;
+            }
+          }
+          this.pnum = pnum;
+        });
+      },
+    });
+  </script>
+</body>
+
 </html>

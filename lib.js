@@ -115,7 +115,6 @@ class Damage {
     this.target = target;
     this.x = target.x;
     this.y = target.y;
-    sound.play();
   }
   draw() {
     if (this.count > 0) {
@@ -208,10 +207,12 @@ class Units {
 class Battlemap {
   constructor() {
     this.image = null;
+    this.filename = null;
     this.list = [];
     new FirestoreListener('battlemaps', this);
   }
   load(filename) {
+    this.filename = filename;
     if (typeof loadImage !== 'undefined') {
       this.image = loadImage(filename);
     }
