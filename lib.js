@@ -4,17 +4,6 @@ function touched(ox, oy, size) {
   return ox < x && x < ox + size && oy < y && y < oy + size;
 }
 
-class Iterable {
-  constructor(values) {
-    this.values = values;
-  }
-  * [Symbol.iterator]() {
-    for (const value of this.values) {
-      yield value;
-    }
-  }
-}
-
 class Tile {
   constructor(x, y) {
     this.x = x * SIZE;
@@ -29,15 +18,27 @@ class Tile {
   }
 }
 
-class Tiles extends Iterable {
-  constructor() {
-    const tiles = [];
+class Tiles {
+  constructor(units) {
+    this.units = units;
+    this.tiles = [];
     for (let y = 0; y < HEIGHT; y++) {
       for (let x = 0; x < WIDTH; x++) {
-        tiles.push(new Tile(x, y));
+        this.tiles.push(new Tile(x, y));
       }
     }
-    super(tiles);
+  }
+  draw() {
+    for (const tile of this.tiles) {
+      if (tile.touched() && mousePressed) {
+        fill('white');
+      } else if (this.units.inRange(tile)) {
+        fill(256, 64, 64, 128); // in fireball
+      } else {
+        noFill();
+      }
+      tile.draw();
+    }
   }
 }
 
@@ -69,7 +70,6 @@ class Unit {
     fill(this.color);
     strokeWeight(3);
     circle(this.p.x, this.p.y, SIZE - MARGIN);
-    // circle(this.p.x + RADIUS, this.p.y + RADIUS, SIZE * 2 - MARGIN);
   }
   drawLabel() {
     textSize(32);
@@ -184,8 +184,6 @@ class Units {
   modify(id, data) {
     let unit = this.map.get(id);
     const num = data.damage - unit.damage;
-    console.log(num);
-    console.log(unit);
     if (num > 0) {
       this.damage.hit(num, unit);
     }
@@ -208,25 +206,32 @@ class Battlemap {
   constructor() {
     this.image = null;
     this.filename = null;
+    this.monsterNum = null; // Needs for reactive
+    this.monsterHp = null;
+    this.playerNum = null;
     this.list = [];
     new FirestoreListener('battlemaps', this);
   }
-  load(filename) {
+  load({ filename, monsterNum, monsterHp, playerNum }) {
     this.filename = filename;
+    this.monsterNum = monsterNum;
+    this.monsterHp = monsterHp;
+    this.playerNum = playerNum;
+
     if (typeof loadImage !== 'undefined') {
       this.image = loadImage(filename);
     }
   }
   add(id, data) {
     if (id === 'selected') {
-      this.load(data.filename);
+      this.load(data);
     } else {
       this.list.push({id, ...data})
     }
   }
   modify(id, data) {
     if (id === 'selected') {
-      this.load(data.filename);
+      this.load(data);
     }
   }
 }
