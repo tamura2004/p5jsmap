@@ -7,8 +7,8 @@ const COLORS = { MONSTER: '#de9610', PC: '#65ace4', SPELL: '#c93a40' };
 const STEP = 4; // 移動アニメーションの中割数
 
 let mousePressed = false;
-let tiles = new Tiles();
 let units = new Units();
+let tiles = new Tiles(units);
 let battlemap = new Battlemap();
 
 function setup() {
@@ -19,16 +19,7 @@ function draw() {
   if (battlemap.image) {
     background(battlemap.image);
   }
-  for (const tile of [...tiles]) {
-    if (tile.touched() && mousePressed) {
-      fill('white');
-    } else if (units.inRange(tile)) {
-      fill(256, 64, 64, 128);
-    } else {
-      noFill();
-    }
-    tile.draw();
-  }
+  tiles.draw();
   if (mousePressed) {
     units.measure.draw();
   }
