@@ -34,7 +34,7 @@
               <p class="control" v-for="i in [-10, -1, 1, 10]">
                 <button class="button has-text-weight-bold" @click="pnum += i">{{ i > 0 ? `+${i}` : i }}</button>
               </p>
-              <b-input type="number" v-model="pnum"></b-input>
+              <b-input type="number" v-model.number="pnum"></b-input>
               <p class="control">
                 <button class="button is-info" @click="preset">人</button>
               </p>
@@ -54,7 +54,7 @@
                   </div>
                   <div class="column">
                     <b-field label="hp" label-position="on-border">
-                      <b-input type="number" v-model="player.hp"></b-input>
+                      <b-input type="number" v-model.number="player.hp"></b-input>
                     </b-field>
                   </div>
                   <div class="column">
@@ -76,7 +76,7 @@
               <p class="control" v-for="i in [-10, -1, 1, 10]">
                 <button class="button has-text-weight-bold" @click="num += i">{{ i > 0 ? `+${i}` : i }}</button>
               </p>
-              <b-input type="number" v-model="num"></b-input>
+              <b-input type="number" v-model.number="num"></b-input>
               <p class="control">
                 <button class="button is-info" @click="reset">匹</button>
               </p>
@@ -85,7 +85,7 @@
               <p class="control" v-for="i in [-10, -1, 1, 10]">
                 <button class="button has-text-weight-bold" @click="hp += i">{{ i > 0 ? `+${i}` : i }}</button>
               </p>
-              <b-input type="number" v-model="hp"></b-input>
+              <b-input type="number" v-model.number="hp"></b-input>
               <p class="control">
                 <button class="button is-info" @click="updateMonsterHp">hp</button>
               </p>
@@ -107,7 +107,7 @@
                       <p class="control" v-for="i in [1, 10]">
                         <button class="button" @click="monster.hit += i">{{ i > 0 ? `+${i}` : i }}</button>
                       </p>
-                      <b-input type="number" placeholder="ダメージ" v-model="monster.hit"></b-input>
+                      <b-input type="number" placeholder="ダメージ" v-model.number="monster.hit"></b-input>
                       <p class="control">
                         <button class="button is-info" @click="hit(monster)">ダメージ</button>
                       </p>
